@@ -11,19 +11,17 @@ document.addEventListener('DOMContentLoaded', () => {
     selectTTS.addEventListener('change', handleTTSvoiceChange);
 
     // Retrieve the stored speechSettings from extension storage
-    browser.storage.local.get('speechSettings')
-        .then(result => {
-            if (result.speechSettings) {
-                // Set the slider values based on the stored speechSettings
-                speedSlider.value = result.speechSettings.speechSpeed;
-                volumeSlider.value = result.speechSettings.speechVolume;
-                // 
-                selectTTS.value = result.speechSettings.speechVoice
-            }
-        })
-        .catch(error => {
-            console.error('Error retrieving speechSettings:', error);
-        });
+    chrome.storage.local.get('speechSettings', result => {
+        if (result.speechSettings) {
+            // Set the slider values based on the stored speechSettings
+            speedSlider.value = result.speechSettings.speechSpeed;
+            volumeSlider.value = result.speechSettings.speechVolume;
+            selectTTS.value = result.speechSettings.speechVoice;
+        }
+    });
+
+    chrome.runtime.lastError ? console.error('Error retrieving speech settings:', chrome.runtime.lastError) : null;
+
 
     // Function to handle speed slider change
     function handleSpeedChange(event) {
@@ -48,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to save the speech settings in extension storage
     function saveSpeechSettings() {
-        browser.storage.local.set({ speechSettings: speechSettings });
+        chrome.storage.local.set({ speechSettings: speechSettings });
     }
 
     // Function to populate the TTS engines dropdown
@@ -60,12 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const synth = window.speechSynthesis;
             const voices = synth.getVoices();
 
-            voices.forEach(voice => {
-                const option = document.createElement('option');
-                option.text = voice.name;
-                option.value = voice.voiceURI;
-                select.add(option);
-            });
+            // Chrome requires an asynchronous event listener to get the voices
+            speechSynthesis.onvoiceschanged = () => {
+                const voices = synth.getVoices();
+
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.text = voice.name;
+                    option.value = voice.voiceURI;
+                    select.add(option);
+                });
+            };
         } else {
             const option = document.createElement('option');
             option.text = 'TTS not supported';
@@ -79,9 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Retrieve the speech settings from extension storage on startup
-browser.storage.local.get('speechSettings')
-    .then(result => {
-        if (result.speechSettings) {
-            speechSettings = result.speechSettings;
-        }
-    });
+chrome.storage.local.get('speechSettings', result => {
+    if (result.speechSettings) {
+        speechSettings = result.speechSettings;
+    }
+});

@@ -20,28 +20,26 @@ const downloadCaptionFile = async track => {
 let intervalId; // Variable to store the interval ID
 let speechSettings;
 
-browser.storage.local.get('speechSettings')
-  .then(result => {
-    if (result.speechSettings) {
-      speechSettings = result.speechSettings;
-    } else {
-      speechSettings = {
-        speechSpeed: 1.6,
-        speechVolume: 1,
-        speechVoice: null
-      };
-    }
-  })
-  .catch(error => {
-    console.error('Error retrieving speech settings:', error);
-  });
+chrome.storage.local.get('speechSettings', result => {
+  if (result.speechSettings) {
+    speechSettings = result.speechSettings;
+  } else {
+    speechSettings = {
+      speechSpeed: 1.6,
+      speechVolume: 1,
+      speechVoice: null
+    };
+  }
+});
+chrome.runtime.lastError ? console.error('Error retrieving speech settings:', chrome.runtime.lastError) : null;
 
-browser.storage.onChanged.addListener((changes, area) => {
+chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && 'speechSettings' in changes) {
-    // Reasign the updated speechSettings array value
+    // Reassign the updated speechSettings object value
     speechSettings = changes.speechSettings.newValue;
   }
 });
+
 
 const selectCaptionFileForTTS = async (track) => {
   const url = track.baseUrl;
