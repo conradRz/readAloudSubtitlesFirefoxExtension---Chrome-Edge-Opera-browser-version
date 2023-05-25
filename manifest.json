@@ -22,12 +22,6 @@
       ]
     }
   ],
-  "web_accessible_resources": [
-    {   
-    "resources": ["settings.html", "content.js"],
-    "matches": ["*://*/*"]
-    }
-  ],
   "options_ui": {
     "page": "settings.html",
     "browser_style": false
