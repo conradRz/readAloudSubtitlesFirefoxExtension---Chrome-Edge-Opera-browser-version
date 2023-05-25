@@ -83,10 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Retrieve the speech settings from extension storage on startup
 chrome.storage.local.get('speechSettings', result => {
-    //console.log(result);
-    //console.log(result.speechSettings);
     if (result.speechSettings) {
         speechSettings = result.speechSettings;
-        //console.log(speechSettings)
     }
 });
