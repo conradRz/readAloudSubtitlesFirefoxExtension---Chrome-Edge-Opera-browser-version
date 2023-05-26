@@ -84,15 +84,17 @@ const selectCaptionFileForTTS = async (track) => {
           let utterance = new SpeechSynthesisUtterance(unescapeHTML(matchedText.replace(/\n/g, "").replace(/\\"/g, '"').trim().replace(/[,\.]+$/, '').replace(/\r/g, ""))); //.replace(/[,\.]+$/, '') trims trailing , and . which makes the subtitle playing smoother in my subjective opinion
 
           //only assign utterance.voice if speechSettings.speechVoice is not empty, that is other voice than the environment default had been selected
-          if (speechSettings.speechVoice !== null) {
+          // && voices && voices.length > 0 checks as once a youtube ad caused "Uncaught TypeError: Cannot read properties of undefined (reading 'find')"
+          if (speechSettings.speechVoice !== null && voices && voices.length > 0) {
             const voice = voices.find((voice) => voice.voiceURI === speechSettings.speechVoice);
             if (voice) {
               utterance.voice = voice;
             }
           }
 
-
           utterance.rate = speechSettings.speechSpeed;
+          console.log(utterance.rate);
+          console.log(speechSettings.speechSpeed);
           utterance.volume = speechSettings.speechVolume;
 
           utterance.onend = function () {
