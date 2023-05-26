@@ -40,6 +40,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+let voices;
 
 const selectCaptionFileForTTS = async (track) => {
   const url = track.baseUrl;
@@ -56,11 +57,8 @@ const selectCaptionFileForTTS = async (track) => {
     let subtitlePart = '';
     let previousTime = NaN;
 
-    let voices;
-
     speechSynthesis.onvoiceschanged = () => {
       voices = window.speechSynthesis.getVoices();
-      console.log(voices)
     };
 
     function matchXmlTextToCurrentTime() {
