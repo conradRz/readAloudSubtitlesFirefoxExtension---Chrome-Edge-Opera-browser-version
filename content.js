@@ -93,8 +93,6 @@ const selectCaptionFileForTTS = async (track) => {
           }
 
           utterance.rate = speechSettings.speechSpeed;
-          console.log(utterance.rate);
-          console.log(speechSettings.speechSpeed);
           utterance.volume = speechSettings.speechVolume;
 
           utterance.onend = function () {
