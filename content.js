@@ -46,7 +46,6 @@ const selectCaptionFileForTTS = async (track) => {
   const xml = await fetch(url).then(resp => resp.text());
 
   // better not to place the below in a more global scope, where it will get executed only once, in case the user installs new TTS voices. Here, just loading another video, will give him access to newly installed voices.
-  const voices = window.speechSynthesis.getVoices();
 
   if (xml) {
     const xmlDoc = new DOMParser().parseFromString(xml, 'text/xml');
@@ -56,6 +55,13 @@ const selectCaptionFileForTTS = async (track) => {
 
     let subtitlePart = '';
     let previousTime = NaN;
+
+    let voices;
+
+    speechSynthesis.onvoiceschanged = () => {
+      voices = window.speechSynthesis.getVoices();
+      console.log(voices)
+    };
 
     function matchXmlTextToCurrentTime() {
       let currentTime = document.getElementsByClassName('video-stream')[0].currentTime + 0.25;
@@ -84,6 +90,8 @@ const selectCaptionFileForTTS = async (track) => {
               utterance.voice = voice;
             }
           }
+
+
           utterance.rate = speechSettings.speechSpeed;
           utterance.volume = speechSettings.speechVolume;
 
