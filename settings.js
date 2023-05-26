@@ -55,11 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
         select.innerHTML = '';
 
         if ('speechSynthesis' in window) {
-            const synth = window.speechSynthesis;
-
             // Chrome requires an asynchronous event listener to get the voices
             speechSynthesis.onvoiceschanged = () => {
-                const voices = synth.getVoices();
+                const voices = window.speechSynthesis.getVoices();
 
                 voices.forEach(voice => {
                     const option = document.createElement('option');
