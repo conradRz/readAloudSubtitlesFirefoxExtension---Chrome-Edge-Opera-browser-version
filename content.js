@@ -91,17 +91,22 @@ const selectCaptionFileForTTS = async (track) => {
           }
 
           //not local voices play way, way faster, and their speed needs to be scalled down
-          if (utterance.voice.localService === false) {
-            let speechSpeed = speechSettings.speechSpeed;
+          if (utterance.voice && utterance.voice.localService === false) {
+            // Assuming speechSettings.speechSpeed is within the range of 1.3-3
+            const originalSpeechSpeed = speechSettings.speechSpeed;
+            const minRange1 = 1.3;  // Minimum value of the original range
+            const maxRange1 = 3;    // Maximum value of the original range
+            const minRange2 = 0.8;  // Minimum value of the target range
+            const maxRange2 = 1.5;  // Maximum value of the target range
 
-            // Scale the value
-            let scaledSpeed = (speechSpeed - 1.5) / (3 - 1.5) * (1.5 - 0.8) + 0.8;
+            // Scale the value to the target range
+            const scaledSpeechSpeed = ((originalSpeechSpeed - minRange1) / (maxRange1 - minRange1)) * (maxRange2 - minRange2) + minRange2;
 
-            // Round the scaledSpeed to one decimal place
-            let roundedSpeed = Math.round(scaledSpeed * 10) / 10;
+            // Round the result to one decimal place
+            const roundedSpeechSpeed = Math.round(scaledSpeechSpeed * 10) / 10;
 
             // Use the roundedSpeed value
-            utterance.rate = roundedSpeed
+            utterance.rate = roundedSpeechSpeed
           }
           else { utterance.rate = speechSettings.speechSpeed }
 

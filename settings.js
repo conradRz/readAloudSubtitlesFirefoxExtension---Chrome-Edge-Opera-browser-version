@@ -67,7 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Set the selected value based on stored speechSettings
-                select.value = speechSettings.speechVoice;
+                if (speechSettings && speechSettings.speechVoice) {
+                    select.value = speechSettings.speechVoice;
+                }
             };
         } else {
             const option = document.createElement('option');
