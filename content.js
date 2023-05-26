@@ -90,7 +90,21 @@ const selectCaptionFileForTTS = async (track) => {
             }
           }
 
-          utterance.rate = speechSettings.speechSpeed;
+          //not local voices play way, way faster, and their speed needs to be scalled down
+          if (utterance.voice.localService === false) {
+            let speechSpeed = speechSettings.speechSpeed;
+
+            // Scale the value
+            let scaledSpeed = (speechSpeed - 1.5) / (3 - 1.5) * (1.5 - 0.8) + 0.8;
+
+            // Round the scaledSpeed to one decimal place
+            let roundedSpeed = Math.round(scaledSpeed * 10) / 10;
+
+            // Use the roundedSpeed value
+            utterance.rate = roundedSpeed
+          }
+          else { utterance.rate = speechSettings.speechSpeed }
+
           utterance.volume = speechSettings.speechVolume;
 
           utterance.onend = function () {
