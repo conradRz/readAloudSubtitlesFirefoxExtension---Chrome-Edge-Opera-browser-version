@@ -24,8 +24,8 @@
   ],
   "web_accessible_resources": [
     {   
-    "resources": ["settings.html", "content.js"],
-    "matches": ["*://*/*"]
+      "resources": ["settings.html", "content.js"],
+      "matches": ["*://*/*"]
     }
   ],
   "options_ui": {
