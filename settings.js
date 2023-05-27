@@ -11,15 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
     selectTTS.addEventListener('change', handleTTSvoiceChange);
 
     // Retrieve the stored speechSettings from extension storage
-    chrome.storage.local.get('speechSettings', result => {
-        if (result.speechSettings) {
-            // Set the slider values based on the stored speechSettings
-            speedSlider.value = result.speechSettings.speechSpeed;
-            volumeSlider.value = result.speechSettings.speechVolume;
+    chrome.storage.local
+        .get('speechSettings', result => {
+            if (result.speechSettings) {
+                // Set the slider values based on the stored speechSettings
+                speedSlider.value = result.speechSettings.speechSpeed;
+                volumeSlider.value = result.speechSettings.speechVolume;
 
-            selectTTS.value = result.speechSettings.speechVoice;
-        }
-    });
+                selectTTS.value = result.speechSettings.speechVoice;
+            }
+        });
 
     chrome.runtime.lastError ? console.error('Error retrieving speech settings:', chrome.runtime.lastError) : null;
 
@@ -70,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Set the selected value based on stored speechSettings
                 if (speechSettings && speechSettings.speechVoice) {
                     select.value = speechSettings.speechVoice;
+                } else {
+                    select.value = null;
                 }
             };
         } else {
@@ -85,15 +88,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Retrieve the speech settings from extension storage on startup
-chrome.storage.local.get('speechSettings', result => {
-    if (result.speechSettings) {
-        speechSettings = result.speechSettings;
-    } else {
-        // Initialize speechSettings if it doesn't exist in storage
-        speechSettings = {
-            speechSpeed: 1.6,
-            speechVolume: 1.0,
-            speechVoice: null
-        };
-    }
-});
+chrome.storage.local
+    .get('speechSettings', result => {
+        if (result.speechSettings) {
+            speechSettings = result.speechSettings;
+        } else {
+            // Initialize speechSettings if it doesn't exist in storage
+            speechSettings = {
+                speechSpeed: 1.6,
+                speechVolume: 1.0,
+                speechVoice: null
+            };
+        }
+    });

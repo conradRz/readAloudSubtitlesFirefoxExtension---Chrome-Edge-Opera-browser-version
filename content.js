@@ -29,6 +29,7 @@ chrome.storage.local.get('speechSettings', result => {
       speechVolume: 1,
       speechVoice: null
     };
+    chrome.storage.local.set({ speechSettings: speechSettings });
   }
 });
 chrome.runtime.lastError ? console.error('Error retrieving speech settings:', chrome.runtime.lastError) : null;
