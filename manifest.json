@@ -32,5 +32,6 @@
     "page": "settings.html",
     "browser_style": false
   },
-  "homepage_url": "https://github.com/conradOU/readOutLoudSubtitlesFirefoxExtension"
+  "author": "Conrad Rzuc",
+  "homepage_url": "https://github.com/conradOU/readOutLoudSubtitlesFirefoxExtension---Chrome-browser-version"
 }
