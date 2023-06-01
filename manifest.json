@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "YouTube Subtitle Reader",
   "version": "0.1",
-  "description": "A Chrome extension that reads YouTube subtitles out loud using TTS.",
+  "description": "A Chrome extension that reads YouTube subtitles aloud using TTS.",
   "icons": {
     "48": "icon48.png",
     "128": "icon128.png"
