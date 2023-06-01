@@ -4,7 +4,8 @@
   "version": "0.1",
   "description": "A Chrome extension that reads YouTube subtitles out loud using TTS.",
   "icons": {
-    "48": "icon.png"
+    "48": "icon48.png",
+    "128": "icon128.png"
   },
   "permissions": ["storage", "scripting"],
   "action": {
