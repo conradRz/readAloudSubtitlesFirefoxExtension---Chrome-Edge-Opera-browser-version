@@ -20,6 +20,8 @@ const downloadCaptionFile = async track => {
 let intervalId; // Variable to store the interval ID
 let speechSettings;
 
+const isEdge = navigator.userAgent.includes("Edg");
+
 chrome.storage.local.get('speechSettings', result => {
   if (result.speechSettings) {
     speechSettings = result.speechSettings;
@@ -111,13 +113,13 @@ const selectCaptionFileForTTS = async (track) => {
           }
 
           //not local voices play way, way faster, and their speed needs to be scalled down
-          if (utterance.voice && utterance.voice.localService === false) {
+          if (utterance.voice && utterance.voice.localService === false && !isEdge) {
             // Assuming speechSettings.speechSpeed is within the range of 1.5-3
             const originalSpeechSpeed = speechSettings.speechSpeed;
             const minRange1 = 1.5;  // Minimum value of the original range
             const maxRange1 = 3;    // Maximum value of the original range
             const minRange2 = 1;  // Minimum value of the target range
-            const maxRange2 = 1.4;  // Maximum value of the target range
+            const maxRange2 = 1.5;  // Maximum value of the target range
 
             // Scale the value to the target range
             const scaledSpeechSpeed = ((originalSpeechSpeed - minRange1) / (maxRange1 - minRange1)) * (maxRange2 - minRange2) + minRange2;
