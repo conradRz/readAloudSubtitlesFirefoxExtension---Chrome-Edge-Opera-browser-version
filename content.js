@@ -169,7 +169,7 @@ const languageTexts = {
     subtitleFileDownload: 'Téléchargement du fichier de sous-titres : ',
     selectSpeechSubtitles: 'Sélectionnez les sous-titres audio à lire avec la vidéo : ',
   },
-  ua: {
+  uk: {
     subtitleFileDownload: 'Завантажити файл субтитрів: ',
     selectSpeechSubtitles: 'Виберіть мову субтитрів для відтворення поряд із відео: ',
   },

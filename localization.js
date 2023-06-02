@@ -118,7 +118,7 @@ const translations = {
         selectLanguageText: 'Выберите язык с функцией <i>"текст в речь"</i> &#8594; <br>отметьте <i>"Речь (xx МБ)"</i> &#8594; установить &#8594; перезагрузите компьютер',
         donateButton: '<a href="https://www.paypal.com/donate/?hosted_button_id=2QH26ZA928JNC">PayPal Пожертвовать программисту</a>'
     },
-    ua: {
+    uk: {
         settingsTitle: "Налаштування програвання субтитрів на YouTube",
         speedLabel: "Швидкість:",
         volumeLabel: "Гучність:",

@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "YouTube Altyazı Okuyucu"
+  },
+  "appDesc": {
+    "message": "Kullanıcıların YouTube altyazılarını yüksek sesle okumasına izin verir. Bu, yayınlandığı tarihte bu işlevi sağlayan başka bir yazılım/uzantı bulunmadığından, bir boşluğu dolduran benzersiz bir uzantıdır. Dil araştırmaları, bir dile pasif olarak maruz kalmanın dil öğrenimi için faydalı olduğunu göstermiştir. Dil öğrenimi için, kör olan ve yabancı, dublajsız materyalleri tüketmek isteyen bireyler ve ayrıca çağdaş yabancı medya ve kültürlerle tanışmak isteyen kişiler için faydalıdır."
+  }
+}
