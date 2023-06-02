@@ -54,7 +54,7 @@ Please note that the Chrome version of the extension includes Google Translate v
 
 **Microsoft Edge provides the widest support of languages to speech, their voices are AI generated, and very good. Unfortunally, Google restricts their voices to Google products (for example Chrome browser), as Microsoft restricts their premium (but free to end user) voices to their products (for example Edge browser, on windows 10 and up).**
 
-### Edge and its AI premium voices below
+### Edge and its free AI premium voices below
 
 ![](readmePics/enEdgeWithItsHundredsOfAIpremiumVoices.png)
 
