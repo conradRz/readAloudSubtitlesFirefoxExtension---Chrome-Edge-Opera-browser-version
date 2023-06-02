@@ -20,6 +20,8 @@ const downloadCaptionFile = async track => {
 let intervalId; // Variable to store the interval ID
 let speechSettings;
 
+// important as Microsoft voices and Chrome Google voices speeds are different, yet both have a parameter of 
+// utterance.voice.localService === false
 const isEdge = navigator.userAgent.includes("Edg");
 
 chrome.storage.local.get('speechSettings', result => {
