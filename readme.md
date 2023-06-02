@@ -54,6 +54,10 @@ Please note that the Chrome version of the extension includes Google Translate v
 
 **Microsoft Edge provides the widest support of languages to speech, their voices are AI generated, and very good. Unfortunally, Google restricts their voices to Google products (for example Chrome browser), as Microsoft restricts their premium (but free to end user) voices to their products (for example Edge browser, on windows 10 and up).**
 
+### Edge and its AI premium voices below
+
+![](readmePics/enEdgeWithItsHundredsOfAIpremiumVoices.png)
+
 ---
 
 This is due to the fact that the Chrome browser belongs to Google, and the voices work seamlessly on Chrome without any additional setup. However, accessing Google voices in Firefox extensions, such as ReadAloud, doesn't use official methods, and could be in breach of terms and conditions. Moreover, the Google voices used in ReadAloud could stop working unexpectedly. Therefore, to ensure a stable and compliant experience, the Firefox version of our extension does not include Google voices.
