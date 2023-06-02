@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html) [![Paypal donate button](readmePics/PayPal-Donate-Button.png)](https://www.paypal.com/donate/?hosted_button_id=2QH26ZA928JNC)
 
-This is a Chrome extension that allows users to have YouTube subtitles read aloud.
+This is a Chrome|Edge extension that allows users to have YouTube subtitles read aloud.
 It's a unique extension that fills a gap in the "market", as at the time of publishing, there is no other software/extensions available that provide this functionality.
 
 ![](readmePics/enSettings.png) ![](readmePics/enSettings2.png) ![](readmePics/enOptions.png)
@@ -49,8 +49,9 @@ If you find this extension useful and would like to support its development and 
 
 ## Google Translate Voices and Chrome Compatibility
 
-Please note that the Chrome version of the extension includes all Google Translate voices.
+Please note that the Chrome version of the extension includes Google Translate voices.
 **All the Google Translate voices do not work on Firefox browser wersion of this extension.**
+**Microsoft Edge provides the widest support of languages to speech, their voices are AI generated, and very good. Unfortunally, Google restricts their voices to Google products (for example Chrome browser), as Microsoft restricts their premium (but free to end user) voices to their products (for example Edge browser, on windows 10 and up).
 
 ---
 
