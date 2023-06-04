@@ -5,6 +5,8 @@
 This is a Chrome|Edge extension that allows users to have YouTube subtitles read aloud.
 It's a unique extension that fills a gap in the "market", as at the time of publishing, there is no other software/extensions available that provide this functionality.
 
+https://chrome.google.com/webstore/detail/youtube-subtitle-reader/nplkdkbfnfheognggghkckpgngbjkahe?hl=en
+
 ![](readmePics/enSettings.png) ![](readmePics/enSettings2.png) ![](readmePics/enOptions.png)
 
 ## Passive Exposure Research in Language Learning
