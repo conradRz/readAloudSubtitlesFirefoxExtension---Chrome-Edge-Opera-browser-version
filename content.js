@@ -114,8 +114,9 @@ const selectCaptionFileForTTS = async (track) => {
             }
           }
 
-          //not local voices play way, way faster, and their speed needs to be scalled down
-          if (utterance.voice && utterance.voice.localService === false && !isEdge) {
+          //non local voices play way, way faster, and their speed needs to be scalled down
+          //second OR makes sure that the default voice on first run, will also be scalled, as in Chrome, that would be null for utterance.voice but at the same time, default one is remote, therefore it needs scalling
+          if ((utterance.voice && utterance.voice.localService === false && !isEdge) || (!utterance.voice && !isEdge)) {
             // Assuming speechSettings.speechSpeed is within the range of 1.5-3
             const originalSpeechSpeed = speechSettings.speechSpeed;
             const minRange1 = 1.5;  // Minimum value of the original range
