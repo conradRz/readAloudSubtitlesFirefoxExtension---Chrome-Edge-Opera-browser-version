@@ -8,7 +8,7 @@
     "48": "icon48.png",
     "128": "icon128.png"
   },
-  "permissions": ["storage", "scripting"],
+  "permissions": ["storage"],
   "action": {
     "default_popup": "settings.html"
   },
