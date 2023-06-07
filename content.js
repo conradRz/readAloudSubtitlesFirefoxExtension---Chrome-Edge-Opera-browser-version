@@ -70,8 +70,15 @@ function binarySearch(textElements, currentTime) {
   return null;
 }
 
-const selectCaptionFileForTTS = async (track) => {
-  const url = track.baseUrl;
+const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
+  let url;
+  if (selectedLanguageCode && selectedLanguageCode !== "Auto translate to") {
+    // Code for handling selected language code
+    url = track.baseUrl + '&tlang=' + selectedLanguageCode;
+  } else {
+    // Code for handling default case
+    url = track.baseUrl;
+  }
   const xml = await fetch(url).then(resp => resp.text());
 
   // better not to place the below in a more global scope, where it will get executed only once, in case the user installs new TTS voices. Here, just loading another video, will give him access to newly installed voices.
