@@ -134,7 +134,6 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
           // && voices && voices.length > 0 checks as once a youtube ad caused "Uncaught TypeError: Cannot read properties of undefined (reading 'find')"
           if (voices && voices.length > 0) {
             let voice;
-            //
             if (speechSettings.speechVoice !== null) { //there was some selection
               //check if selected voice matches play through voice language?
               voice = voices.find((voice) => voice.voiceURI === speechSettings.speechVoice);
