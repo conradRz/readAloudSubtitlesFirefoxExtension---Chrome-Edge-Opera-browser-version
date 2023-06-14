@@ -591,7 +591,7 @@ const createSelectionLink = (track) => {
       selectedLanguageCode = dropdown.value;
     }
     speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = selectedLanguageCode;
-    browser.storage.local.set({ speechSettings: speechSettings });
+    chrome.storage.local.set({ speechSettings: speechSettings });
 
     checkbox.checked = true;
 
