@@ -140,10 +140,12 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
               if (voice && voice.lang.substring(0, 2) === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode) {
                 utterance.voice = voice;
               } else { //now if it doesn't match the language, try to find one which does
-                voice = voices.find(
-                  (voice) =>
-                    voice.lang.substring(0, 2) === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode.substring(0, 2)
-                )
+                if (speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode != null) {
+                  voice = voices.find(
+                    (voice) =>
+                      voice.lang.substring(0, 2) === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode.substring(0, 2)
+                  )
+                }
                 if (voice) {
                   utterance.voice = voice;
                   speechSettings.speechVoice = voice.voiceURI;
