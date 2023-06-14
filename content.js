@@ -48,6 +48,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 let voices;
 
+speechSynthesis.onvoiceschanged = () => {
+  voices = window.speechSynthesis.getVoices();
+};
+
 function binarySearch(textElements, currentTime) {
   let start = 0;
   let end = textElements.length - 1;
@@ -101,8 +105,6 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
 
   const xml = await fetch(url).then(resp => resp.text());
 
-  // better not to place the below in a more global scope, where it will get executed only once, in case the user installs new TTS voices. Here, just loading another video, will give him access to newly installed voices.
-
   if (xml) {
     const xmlDoc = new DOMParser().parseFromString(xml, 'text/xml');
     const textElements = xmlDoc.getElementsByTagName('text');
@@ -111,10 +113,6 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
 
     let subtitlePart = '';
     let previousTime = NaN;
-
-    speechSynthesis.onvoiceschanged = () => {
-      voices = window.speechSynthesis.getVoices();
-    };
 
     function matchXmlTextToCurrentTime() {
       let currentTime = document.getElementsByClassName('video-stream')[0].currentTime + 0.25;
