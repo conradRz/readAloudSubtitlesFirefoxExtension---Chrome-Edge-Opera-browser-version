@@ -148,6 +148,8 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
                 )
                 if (voice) {
                   utterance.voice = voice;
+                  speechSettings.speechVoice = voice.voiceURI;
+                  chrome.storage.local.set({ speechSettings: speechSettings });
                 }
               }
 
