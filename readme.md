@@ -2,14 +2,14 @@
 
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html) [![Paypal donate button](readmePics/PayPal-Donate-Button.png)](https://www.paypal.com/donate/?hosted_button_id=2QH26ZA928JNC)
 
-This is a Chrome|Edge extension that allows users to have YouTube subtitles read aloud.
+This is a [Chrome | Edge | Opera] extension that allows users to have YouTube subtitles read aloud.
 It's a unique extension that fills a gap in the "market", as at the time of publishing, there is no other software/extensions available that provide this functionality.
 
-[Chrome Web Store official link, more voices straight out the box, will work on Edge browser too.](https://chrome.google.com/webstore/detail/youtube-subtitle-reader/nplkdkbfnfheognggghkckpgngbjkahe)
+[Chrome Web Store official link, more voices straight out the box, will work on Edge and Opera browsers too.](https://chrome.google.com/webstore/detail/youtube-subtitle-reader/nplkdkbfnfheognggghkckpgngbjkahe)
 
 [Firefox Browser Add-ons](https://addons.mozilla.org/en-US/firefox/addon/youtube-subtitle-reader/)
 
-#### In terms of number/quality of available voices provided by the browser MS Edge > Chrome > Firefox, with the Firefox having the least number of voices.
+#### In terms of number/quality of available voices provided by the browser MS Edge > Chrome > [Firefox/Opera], with the Firefox/Opera having the least number of voices.
 
 ![](readmePics/enSettings.png) ![](readmePics/enSettings2.png) ![](readmePics/enOptions.png)
 
