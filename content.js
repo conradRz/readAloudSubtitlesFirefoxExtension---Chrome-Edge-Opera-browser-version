@@ -833,65 +833,75 @@ const fillZero = (num, len) => {
  * Ads were breaking up my extension experience to end users. If they have an ad blocker installed, then that wasn't even an issue, but for the ones without an ad blocker, it was a problem. Therefore, the solution is to remove YouTube ads.
  */
 
+// Function to check if the element is a video ad
+const isVideoAd = (element) => {
+  return (
+    element.classList.contains("video-ads") ||
+    element.classList.contains("ytp-ad-module") ||
+    element.classList.contains("ytp-ad-overlay-close-button") ||
+    element.classList.contains("ytp-ad-text") ||
+    element.classList.contains("ytp-ad-message-container")
+  );
+};
+
 // Function to remove ads
 const removeAds = () => {
-  const ad = document.getElementsByClassName("video-ads ytp-ad-module")[0];
+  const ads = document.querySelectorAll(".video-ads, .ytp-ad-module");
+  ads.forEach((ad) => {
+    ad.style.display = "none";
+  });
 
-  let closeAble = document.getElementsByClassName("ytp-ad-overlay-close-button");
-  for (let i = 0; i < closeAble.length; i++) {
-    closeAble[i].click();
+  const closeButtons = document.querySelectorAll(".ytp-ad-overlay-close-button");
+  closeButtons.forEach((button) => {
+    button.click();
     // console.log("ad banner closed!");
-  }
+  });
 
-  let sideAd = document.querySelector(".style-scope.ytd-watch-next-secondary-results-renderer.sparkles-light-cta.GoogleActiveViewElement");
-  if (sideAd !== null) {
+  const sideAds = document.querySelectorAll(".style-scope.ytd-watch-next-secondary-results-renderer.sparkles-light-cta.GoogleActiveViewElement, .style-scope.ytd-item-section-renderer.sparkles-light-cta");
+  sideAds.forEach((sideAd) => {
     sideAd.style.display = "none";
-    // console.log(".style-scope.ytd-watch-next-secondary-results-renderer.sparkles-light-cta.GoogleActiveViewElement ad removed!");
-  }
+    // console.log(".style-scope.ytd-watch-next-secondary-results-renderer.sparkles-light-cta.GoogleActiveViewElement, .style-scope.ytd-item-section-renderer.sparkles-light-cta ad removed!");
+  });
 
-  let sideAd_ = document.querySelector(".style-scope.ytd-item-section-renderer.sparkles-light-cta");
-  if (sideAd_ !== null) {
-    sideAd_.style.display = "none";
-    // console.log(".style-scope.ytd-item-section-renderer.sparkles-light-cta ad removed!");
-  }
-
-  let skipBtn = document.querySelector(".ytp-ad-text.ytp-ad-skip-button-text");
+  const skipBtn = document.querySelector(".ytp-ad-text.ytp-ad-skip-button-text");
   if (skipBtn !== null) {
     skipBtn.click();
     // console.log("skippable ad skipped!");
   }
 
-  let incomingAd = document.querySelector(".ytp-ad-message-container");
+  const incomingAd = document.querySelector(".ytp-ad-message-container");
   if (incomingAd !== null) {
     incomingAd.style.display = "none";
     // console.log("removed incoming ad alert!");
   }
 
-  let companionSlot = document.querySelector(".style-scope.ytd-companion-slot-renderer");
+  const companionSlot = document.querySelector(".style-scope.ytd-companion-slot-renderer");
   if (companionSlot !== null) {
-    companionSlot.remove();
+    companionSlot.parentNode.removeChild(companionSlot);
     // console.log(".style-scope.ytd-companion-slot-renderer ad removed!");
   }
 
-  if (ad !== undefined && ad.children.length > 0) {
-    let previewText = document.querySelector(".ytp-ad-text.ytp-ad-preview-text");
+  if (ad !== null && ad.children.length > 0) {
+    const previewText = document.querySelector(".ytp-ad-text.ytp-ad-preview-text");
     if (previewText !== null) {
-      previewText.remove();
+      previewText.parentNode.removeChild(previewText);
       // console.log("unskippable ad removed!");
     }
   }
-}
+};
 
-// Create a MutationObserver to detect changes in the DOM
-const observer = new MutationObserver(function (mutationsList) {
-  for (let mutation of mutationsList) {
-    if (mutation.type === "childList" || mutation.type === "subtree") {
-      if (document.getElementsByClassName("video-stream html5-main-video")[0] !== undefined) {
+// Create a MutationObserver to detect changes in specific elements related to video ads
+const observer = new MutationObserver((mutationsList) => {
+  for (const mutation of mutationsList) {
+    if (mutation.type === "childList") {
+      const addedNodes = Array.from(mutation.addedNodes);
+      const hasVideoAd = addedNodes.some((node) => isVideoAd(node));
+      if (hasVideoAd) {
         removeAds();
       }
     }
   }
 });
 
-// Start observing changes in the DOM
+// Start observing changes in the DOM when a video is being played
 observer.observe(document.documentElement, { childList: true, subtree: true });
