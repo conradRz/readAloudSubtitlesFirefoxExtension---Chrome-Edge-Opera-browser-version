@@ -3,7 +3,7 @@
   "name": "__MSG_appName__",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "icons": {
     "48": "icon48.png",
     "128": "icon128.png"
@@ -31,5 +31,5 @@
     "browser_style": false
   },
   "author": "conrad.rzuc@gmail.com",
-  "homepage_url": "https://github.com/conradOU/"
+  "homepage_url": "https://github.com/conradRz/"
 }
