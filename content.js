@@ -828,3 +828,70 @@ const fillZero = (num, len) => {
   }
   return result
 }
+
+/**
+ * Ads were breaking up my extension experience to end users. If they have an ad blocker installed, then that wasn't even an issue, but for the ones without an ad blocker, it was a problem. Therefore, the solution is to remove YouTube ads.
+ */
+
+// Function to remove ads
+const removeAds = () => {
+  const ad = document.getElementsByClassName("video-ads ytp-ad-module")[0];
+
+  let closeAble = document.getElementsByClassName("ytp-ad-overlay-close-button");
+  for (let i = 0; i < closeAble.length; i++) {
+    closeAble[i].click();
+    // console.log("ad banner closed!");
+  }
+
+  let sideAd = document.querySelector(".style-scope.ytd-watch-next-secondary-results-renderer.sparkles-light-cta.GoogleActiveViewElement");
+  if (sideAd !== null) {
+    sideAd.style.display = "none";
+    // console.log(".style-scope.ytd-watch-next-secondary-results-renderer.sparkles-light-cta.GoogleActiveViewElement ad removed!");
+  }
+
+  let sideAd_ = document.querySelector(".style-scope.ytd-item-section-renderer.sparkles-light-cta");
+  if (sideAd_ !== null) {
+    sideAd_.style.display = "none";
+    // console.log(".style-scope.ytd-item-section-renderer.sparkles-light-cta ad removed!");
+  }
+
+  let skipBtn = document.querySelector(".ytp-ad-text.ytp-ad-skip-button-text");
+  if (skipBtn !== null) {
+    skipBtn.click();
+    // console.log("skippable ad skipped!");
+  }
+
+  let incomingAd = document.querySelector(".ytp-ad-message-container");
+  if (incomingAd !== null) {
+    incomingAd.style.display = "none";
+    // console.log("removed incoming ad alert!");
+  }
+
+  let companionSlot = document.querySelector(".style-scope.ytd-companion-slot-renderer");
+  if (companionSlot !== null) {
+    companionSlot.remove();
+    // console.log(".style-scope.ytd-companion-slot-renderer ad removed!");
+  }
+
+  if (ad !== undefined && ad.children.length > 0) {
+    let previewText = document.querySelector(".ytp-ad-text.ytp-ad-preview-text");
+    if (previewText !== null) {
+      previewText.remove();
+      // console.log("unskippable ad removed!");
+    }
+  }
+}
+
+// Create a MutationObserver to detect changes in the DOM
+const observer = new MutationObserver(function (mutationsList) {
+  for (let mutation of mutationsList) {
+    if (mutation.type === "childList" || mutation.type === "subtree") {
+      if (document.getElementsByClassName("video-stream html5-main-video")[0] !== undefined) {
+        removeAds();
+      }
+    }
+  }
+});
+
+// Start observing changes in the DOM
+observer.observe(document.documentElement, { childList: true, subtree: true });
