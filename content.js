@@ -903,5 +903,5 @@ const observer = new MutationObserver((mutationsList) => {
   }
 });
 
-// Start observing changes in the DOM, but only inside div id="player"; when a video is being played, as that's where the video ads are loaded
-observer.observe(document.getElementById("player"), { childList: true, subtree: true });
+// Start observing changes in the DOM when a video is being played
+observer.observe(document.documentElement, { childList: true, subtree: true });
