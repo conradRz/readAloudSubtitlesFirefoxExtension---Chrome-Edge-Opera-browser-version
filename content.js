@@ -834,7 +834,7 @@ const fillZero = (num, len) => {
  */
 
 // Function to remove ads
-const removeAds = () => {
+const removeVideoAds = () => {
   const ad = document.getElementsByClassName("video-ads ytp-ad-module")[0];
 
   let closeAble = document.getElementsByClassName("ytp-ad-overlay-close-button");
@@ -887,11 +887,14 @@ const observer = new MutationObserver(function (mutationsList) {
   for (let mutation of mutationsList) {
     if (mutation.type === "childList" || mutation.type === "subtree") {
       if (document.getElementsByClassName("video-stream html5-main-video")[0] !== undefined) {
-        removeAds();
+        removeVideoAds();
       }
     }
   }
 });
 
-// Start observing changes in the DOM
-observer.observe(document.documentElement, { childList: true, subtree: true });
+const player = document.getElementById("player");
+if (player) {
+  // Start observing changes in the DOM, but only inside div id="player"; when a video is being played, as that's where the video ads are loaded
+  observer.observe(player, { childList: true, subtree: true });
+}
