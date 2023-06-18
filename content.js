@@ -198,17 +198,6 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
   }
 };
 
-// handle video change event
-const handleVideoChange = () => {
-  clearInterval(intervalId); // Clear the interval when the video changes
-};
-
-const elements = document.getElementsByClassName('video-stream');
-
-if (elements.length > 0) {
-  // Add event listener for video change
-  document.getElementsByClassName('video-stream')[0].addEventListener('loadeddata', handleVideoChange);
-}
 
 /**
  * Displays a list of subtitles that the video has.
@@ -712,6 +701,7 @@ let currentUrl = ''
 const checkSubtitle = () => {
   const newUrl = location.href
   if (currentUrl !== newUrl) {
+    clearInterval(intervalId);
     const videoId = extractVideoId();
     if (videoId && canInsert()) {
       currentUrl = newUrl;
@@ -840,39 +830,39 @@ setInterval(function () {
     let closeAble = document.getElementsByClassName("ytp-ad-overlay-close-button");
     for (let i = 0; i < closeAble.length; i++) {
       closeAble[i].click();
-      console.log("ad banner closed!")
+      //console.log("ad banner closed!")
     }
     if (document.getElementsByClassName("style-scope ytd-watch-next-secondary-results-renderer sparkles-light-cta GoogleActiveViewElement")[0] !== undefined) {
       let sideAd = document.getElementsByClassName("style-scope ytd-watch-next-secondary-results-renderer sparkles-light-cta GoogleActiveViewElement")[0];
       sideAd.style.display = "none";
-      console.log("side ad removed!")
+      //console.log("side ad removed!")
     }
     if (document.getElementsByClassName("style-scope ytd-item-section-renderer sparkles-light-cta")[0] !== undefined) {
       let sideAd_ = document.getElementsByClassName("style-scope ytd-item-section-renderer sparkles-light-cta")[0];
       sideAd_.style.display = "none";
-      console.log("side ad removed!")
+      //console.log("side ad removed!")
     }
     if (document.getElementsByClassName("ytp-ad-text ytp-ad-skip-button-text")[0] !== undefined) {
       let skipBtn = document.getElementsByClassName("ytp-ad-text ytp-ad-skip-button-text")[0];
       skipBtn.click();
-      console.log("skippable ad skipped!")
+      //console.log("skippable ad skipped!")
     }
     if (document.getElementsByClassName("ytp-ad-message-container")[0] !== undefined) {
       let incomingAd = document.getElementsByClassName("ytp-ad-message-container")[0];
       incomingAd.style.display = "none";
-      console.log("removed incoming ad alert!")
+      //console.log("removed incoming ad alert!")
     }
     if (document.getElementsByClassName("style-scope ytd-companion-slot-renderer")[0] !== undefined) {
       document.getElementsByClassName("style-scope ytd-companion-slot-renderer")[0].remove();
-      console.log("side ad removed!")
+      //console.log("side ad removed!")
     }
     if (ad !== undefined) {
       if (ad.children.length > 0) {
         if (document.getElementsByClassName("ytp-ad-text ytp-ad-preview-text")[0] !== undefined) {
           vid.playbackRate = 16;
-          console.log("Incrementally skipped unskippable ad!")
+          //console.log("Incrementally skipped unskippable ad!")
         }
       }
     }
   }
-}, 100)
+}, 200)
