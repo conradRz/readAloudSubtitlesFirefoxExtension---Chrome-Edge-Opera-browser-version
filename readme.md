@@ -56,7 +56,6 @@ If you find this extension useful and would like to support its development and 
 ## Google Translate Voices and Chrome Compatibility
 
 Please note that the Chrome version of the extension includes Google Translate voices.
-**All the Google Translate voices do not work on Firefox browser wersion of this extension.**
 
 **Microsoft Edge provides the widest support of languages to speech, their voices are AI generated, and very good. Unfortunally, Google restricts their voices to Google products (for example Chrome browser), as Microsoft restricts their premium (but free to end user) voices to their products (for example Edge browser, on windows 10 and up).**
 
