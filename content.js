@@ -131,62 +131,122 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
           subtitlePart = matchedText;
 
           isSpeechSynthesisInProgress = true;
-          let utterance = new SpeechSynthesisUtterance(unescapeHTML(matchedText.replace(/\n/g, "").replace(/\\"/g, '"').trim().replace(/[,\.]+$/, '').replace(/\r/g, ""))); //.replace(/[,\.]+$/, '') trims trailing , and . which makes the subtitle playing smoother in my subjective opinion
 
-          //only assign utterance.voice if speechSettings.speechVoice is not empty, that is other voice than the environment default had been selected
-          // && voices && voices.length > 0 checks as once a youtube ad caused "Uncaught TypeError: Cannot read properties of undefined (reading 'find')"
-          if (voices && voices.length > 0) {
-            if (speechSettings.speechVoice !== null) { //there was some selection
-              //check if selected voice matches play through voice language?
-              let voice = voices.find((voice) => voice.voiceURI === speechSettings.speechVoice);
-              if (voice && voice.lang.substring(0, 2) === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode) {
-                utterance.voice = voice;
-              } else { //now if it doesn't match the language, try to find one which does
-                if (speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode !== null) {
-                  voice = voices.find(
-                    (voice) =>
-                      voice.lang.substring(0, 2) === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode.substring(0, 2)
-                  )
-                }
-                if (voice) {
-                  utterance.voice = voice;
-                  speechSettings.speechVoice = voice.voiceURI;
-                  chrome.storage.local.set({ speechSettings: speechSettings });
+          let utterance = new SpeechSynthesisUtterance(unescapeHTML(matchedText.replace(/\n/g, "").replace(/\\"/g, '"').trim().replace(/[,\.]+$/, '').replace(/\r/g, "")));
+
+          if (speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode !== null) {
+            if (speechSettings.speechVoice && speechSettings.speechVoice.startsWith("GoogleTranslate_")) {
+              const langCode = speechSettings.speechVoice.replace("GoogleTranslate_", "");
+              if (langCode === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode) {
+                // Speak with GoogleTranslate_ if language codes match
+                speakWithGoogleVoice(langCode);
+              } else {
+                const localVoice = findLocalVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
+                if (localVoice) {
+                  utterance.voice = localVoice;
+                  updateSettingsAndSpeak(localVoice);
+                } else {
+                  speakWithGoogleVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
                 }
               }
+            } else if (!speechSettings.speechVoice) {
+              // default state just after installation, and when the user didn't yet select a voice from a dropdown
+              const langCode = speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode;
 
-              //if a voice with a matching language is unavailable
-              //here it would make sense to pop up some information message to the user, as otherwise it just tries to read it with English voice, but the underlying text is non-english
+              const localVoice = findLocalVoice(langCode);
+              if (localVoice) {
+                updateSettingsAndSpeak(localVoice);
+              } else {
+                speakWithGoogleVoice(langCode);
+              }
+            } else {
+              const voice = findVoiceByVoiceURI(speechSettings.speechVoice);
+              if (voice && voice.lang.substring(0, 2) === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode) {
+                utterance.voice = voice;
+                updateSettingsAndSpeak(voice);
+              } else {
+                const localVoice = findLocalVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
+                if (localVoice) {
+                  utterance.voice = localVoice;
+                  updateSettingsAndSpeak(localVoice);
+                } else {
+                  speakWithGoogleVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
+                }
+              }
+            }
+          } else {
+            if (speechSettings.speechVoice !== null) {
+              if (speechSettings.speechVoice.startsWith("GoogleTranslate_")) {
+                const langCode = speechSettings.speechVoice.replace("GoogleTranslate_", "");
+                speakWithGoogleVoice(langCode);
+              } else {
+                const voice = findVoiceByVoiceURI(speechSettings.speechVoice);
+                if (voice) {
+                  utterance.voice = voice;
+                  updateSettingsAndSpeak(voice);
+                }
+              }
             }
           }
 
-          //non local voices play way, way faster, and their speed needs to be scalled down
-          //second OR makes sure that the default voice on first run, will also be scalled, as in Chrome, that would be null for utterance.voice but at the same time, default one is remote, therefore it needs scalling
-          if ((utterance.voice && utterance.voice.localService === false && !isEdge) || (!utterance.voice && !isEdge)) {
-            // Assuming speechSettings.speechSpeed is within the range of 1.5-3
-            const originalSpeechSpeed = speechSettings.speechSpeed;
-            const minRange1 = 1.5;  // Minimum value of the original range
-            const maxRange1 = 3;    // Maximum value of the original range
-            const minRange2 = 1;  // Minimum value of the target range
-            const maxRange2 = 1.5;  // Maximum value of the target range
-
-            // Scale the value to the target range
-            const scaledSpeechSpeed = ((originalSpeechSpeed - minRange1) / (maxRange1 - minRange1)) * (maxRange2 - minRange2) + minRange2;
-
-            // Round the result to one decimal place
-            const roundedSpeechSpeed = Math.round(scaledSpeechSpeed * 10) / 10;
-
-            // Use the roundedSpeed value
-            utterance.rate = roundedSpeechSpeed
-          }
-          else { utterance.rate = speechSettings.speechSpeed }
-
-          utterance.volume = speechSettings.speechVolume;
-
-          utterance.onend = () => {
+          function speakWithGoogleVoice(langCode) {
+            const message = {
+              info: {
+                selectionText: utterance.text,
+                lang: langCode
+              }
+            };
+            chrome.runtime.sendMessage(message);
+            speechSettings.speechVoice = "GoogleTranslate_" + langCode;
+            chrome.storage.local.set({ speechSettings: speechSettings });
             isSpeechSynthesisInProgress = false;
-          };
-          speechSynthesis.speak(utterance);
+          }
+
+          function findLocalVoice(langCode) {
+            return voices.find((voice) => voice.lang.substring(0, 2) === langCode);
+          }
+
+          function findVoiceByVoiceURI(voiceURI) {
+            return voices.find((voice) => voice.voiceURI === voiceURI);
+          }
+
+          function updateSettingsAndSpeak(voice) {
+            if (voice) {
+              utterance.voice = voice;
+            }
+
+            utterance.rate = speechSettings.speechSpeed;
+            utterance.volume = speechSettings.speechVolume;
+
+            //non local voices play way, way faster, and their speed needs to be scalled down
+            //second OR makes sure that the default voice on first run, will also be scalled, as in Chrome, that would be null for utterance.voice but at the same time, default one is remote, therefore it needs scalling
+            if ((utterance.voice && utterance.voice.localService === false && !isEdge) || (!utterance.voice && !isEdge)) {
+              // Assuming speechSettings.speechSpeed is within the range of 1.5-3
+              const originalSpeechSpeed = speechSettings.speechSpeed;
+              const minRange1 = 1.5;  // Minimum value of the original range
+              const maxRange1 = 3;    // Maximum value of the original range
+              const minRange2 = 1;  // Minimum value of the target range
+              const maxRange2 = 1.5;  // Maximum value of the target range
+
+              // Scale the value to the target range
+              const scaledSpeechSpeed = ((originalSpeechSpeed - minRange1) / (maxRange1 - minRange1)) * (maxRange2 - minRange2) + minRange2;
+
+              // Round the result to one decimal place
+              const roundedSpeechSpeed = Math.round(scaledSpeechSpeed * 10) / 10;
+
+              // Use the roundedSpeed value
+              utterance.rate = roundedSpeechSpeed
+            }
+
+            speechSettings.speechVoice = voice.voiceURI;
+            chrome.storage.local.set({ speechSettings: speechSettings });
+
+            utterance.onend = () => {
+              isSpeechSynthesisInProgress = false;
+            };
+            speechSynthesis.speak(utterance);
+          }
+
 
         }
       }
