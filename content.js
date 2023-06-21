@@ -629,6 +629,9 @@ const createSelectionLink = (track, languageTexts) => {
     if (checkbox.checked) {
       clearInterval(intervalId);
 
+      // Retrieve the selected language code from the dropdown
+      const selectedLanguageCode = dropdown.value;
+
       if (selectedLanguageCode) {
         selectCaptionFileForTTS(track, selectedLanguageCode);
       } else if (speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode !== null) {
@@ -927,3 +930,41 @@ setInterval(function () {
     }
   }
 }, 200)
+
+// Listen for messages from the settings.js file
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+  if (message.command === 'updateDropdowns') {
+
+    const speechVoice = message.voice;
+    const dropdowns = document.querySelectorAll('[id^="dropdown_"]');
+
+    let languageCode = voices.find((voice) => voice.voiceURI === speechVoice);
+    speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = languageCode.lang.substring(0, 2);
+
+    dropdowns.forEach(function (dropdown) {
+      // Find the option with the matching languageCode
+      // option.value has to be .substring(0, 2) due to Chinese code having more chars than that
+      const selectedOption = Array.from(dropdown.options).find(option => option.value.substring(0, 2) === languageCode.lang.substring(0, 2));
+
+      // Set the selectedIndex of the dropdown to the index of the selected option
+      if (selectedOption) {
+        dropdown.selectedIndex = selectedOption.index;
+      }
+
+      // Assuming the checkbox was created as a sibling of the dropdown within the same container
+      const container = dropdown.parentNode;
+      const checkbox = container.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        // Reselect the checkbox if it was previously selected
+        const isChecked = checkbox.checked;
+        checkbox.checked = false; // Uncheck the checkbox first
+        checkbox.checked = isChecked; // Recheck the checkbox to trigger the 'change' event
+        if (isChecked) {
+          // Trigger the 'change' event on the checkbox. I had to do it that way, as checkbox.checked = isChecked wasn't triggering an event
+          const event = new Event('change');
+          checkbox.dispatchEvent(event);
+        }
+      }
+    });
+  }
+});
