@@ -203,7 +203,8 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
           }
 
           function findLocalVoice(langCode) {
-            return voices.find((voice) => voice.lang.substring(0, 2) === langCode);
+            //cannot be just === langCode due to some codes being more than 2 chars
+            return voices.find((voice) => voice.lang.substring(0, 2) === langCode.substring(0, 2));
           }
 
           function findVoiceByVoiceURI(voiceURI) {
