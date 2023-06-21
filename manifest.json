@@ -3,14 +3,18 @@
   "name": "__MSG_appName__",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
-  "version": "0.1.6.1",
+  "version": "0.1.7",
   "icons": {
     "48": "icon48.png",
     "128": "icon128.png"
   },
   "permissions": ["storage"],
+  "host_permissions": ["https://translate.google.com/"],
   "action": {
     "default_popup": "settings.html"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
