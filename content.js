@@ -929,10 +929,10 @@ setInterval(function () {
       }
     }
   }
-}, 200)
+}, 500)
 
 // Listen for messages from the settings.js file
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (message) {
   if (message.command === 'updateDropdowns') {
 
     const speechVoice = message.voice;
