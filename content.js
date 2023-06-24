@@ -609,8 +609,8 @@ const createSelectionLink = (track, languageTexts) => {
 
   // Click event listener for the checkbox
   checkbox.addEventListener('change', () => {
+    clearInterval(intervalId);
     if (checkbox.checked) {
-      clearInterval(intervalId);
 
       // Retrieve the selected language code from the dropdown
       const selectedLanguageCode = dropdown.value;
@@ -631,8 +631,6 @@ const createSelectionLink = (track, languageTexts) => {
           otherCheckbox.checked = false;
         }
       });
-    } else {
-      clearInterval(intervalId);
     }
   });
 
