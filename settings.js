@@ -41,14 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to handle TTS voice change
     function handleTTSvoiceChange(event) {
-        // Perform actions with the volume value
         speechSettings.speechVoice = event.target.value;
         saveSpeechSettings();
 
-        const speechVoice = speechSettings.speechVoice;
         // Update the dropdowns in the content.js file
         chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, { command: 'updateDropdowns', voice: speechVoice });
+            chrome.tabs.sendMessage(tabs[0].id, { command: 'updateDropdowns', voice: speechSettings.speechVoice });
         });
     }
 
