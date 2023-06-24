@@ -651,6 +651,8 @@ const createSelectionLink = (track, languageTexts) => {
 
   // Change event listener for the dropdown
   dropdown.addEventListener('change', () => {
+    clearInterval(intervalId);
+
     if (dropdown.value === '') {
       selectedLanguageCode = null;
     } else {
@@ -662,7 +664,6 @@ const createSelectionLink = (track, languageTexts) => {
     checkbox.checked = true;
 
     //below is important, as `checkbox.checked = true` doesn't trigger even listener for some reason
-    clearInterval(intervalId);
     selectCaptionFileForTTS(track, selectedLanguageCode);
 
   });
@@ -930,6 +931,7 @@ setInterval(function () {
 // Listen for messages from the settings.js file
 chrome.runtime.onMessage.addListener(function (message) {
   if (message.command === 'updateDropdowns') {
+    clearInterval(intervalId);
 
     const speechVoice = message.voice;
     const dropdowns = document.querySelectorAll('[id^="dropdown_"]');
