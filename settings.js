@@ -14,11 +14,23 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local
         .get('speechSettings', result => {
             if (result.speechSettings) {
+                speechSettings = result.speechSettings;
                 // Set the slider values based on the stored speechSettings
                 speedSlider.value = result.speechSettings.speechSpeed;
                 volumeSlider.value = result.speechSettings.speechVolume;
 
                 selectTTS.value = result.speechSettings.speechVoice;
+            } else {
+                // Initialize speechSettings if it doesn't exist in storage
+                speechSettings = {
+                    speechSpeed: 1.6,
+                    speechVolume: 1.0,
+                    speechVoice: null
+                };
+                speedSlider.value = speechSettings.speechSpeed;
+                volumeSlider.value = speechSettings.speechVolume;
+
+                selectTTS.value = speechSettings.speechVoice;
             }
         });
 
@@ -41,12 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to handle TTS voice change
     function handleTTSvoiceChange(event) {
-        speechSettings.speechVoice = event.target.value;
-        saveSpeechSettings();
-
         // Update the dropdowns in the content.js file
         chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, { command: 'updateDropdowns', voice: speechSettings.speechVoice });
+            chrome.tabs.sendMessage(tabs[0].id, { voice: event.target.value });
         });
     }
 
@@ -110,18 +119,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Call the function to populate the TTS engines dropdown
     populateTTSEngines();
 });
-
-// Retrieve the speech settings from extension storage on startup
-chrome.storage.local
-    .get('speechSettings', result => {
-        if (result.speechSettings) {
-            speechSettings = result.speechSettings;
-        } else {
-            // Initialize speechSettings if it doesn't exist in storage
-            speechSettings = {
-                speechSpeed: 1.6,
-                speechVolume: 1.0,
-                speechVoice: null
-            };
-        }
-    });
