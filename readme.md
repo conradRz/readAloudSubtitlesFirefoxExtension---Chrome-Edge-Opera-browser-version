@@ -9,6 +9,8 @@ It's a unique extension that fills a gap in the "market", as at the time of publ
 
 [Firefox Browser Add-ons](https://addons.mozilla.org/en-US/firefox/addon/youtube-subtitle-reader/)
 
+https://github.com/conradRz/readAloudSubtitlesFirefoxExtension---Chrome-Edge-Opera-browser-version/assets/26015206/66007794-a475-48b5-88ea-da8f73852869
+
 #### In terms of number/quality of available voices provided by the browser MS Edge > Chrome > [Firefox/Opera], with the Firefox/Opera having the least number of voices.
 
 ![](readmePics/enSettings.png) ![](readmePics/enSettings2.png) ![](readmePics/enOptions.png)
