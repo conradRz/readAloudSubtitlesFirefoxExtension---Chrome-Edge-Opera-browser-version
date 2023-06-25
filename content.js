@@ -40,9 +40,17 @@ chrome.storage.local.get('speechSettings', result => {
 chrome.runtime.lastError ? console.error('Error retrieving speech settings:', chrome.runtime.lastError) : null;
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && 'speechSettings' in changes) {
-    // Reasign the updated speechSettings array value
-    speechSettings = changes.speechSettings.newValue;
+  if (
+    area === 'local' &&
+    'speechSettings' in changes &&
+    (changes.speechSettings.newValue.speechSpeed !== undefined ||
+      changes.speechSettings.newValue.speechVolume !== undefined)
+  ) {
+    const { speechSpeed, speechVolume } = changes.speechSettings.newValue;
+
+    // Update the local array with the new values
+    speechSettings.speechSpeed = speechSpeed;
+    speechSettings.speechVolume = speechVolume;
   }
 });
 
@@ -85,32 +93,123 @@ const getParameterByName = (name, url) => {
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
 
-const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
-
-  let url;
-
+const assignUrl = (track, selectedLanguageCode) => {
   // Extract the current language code from the track.baseUrl
   const urlLanguageCode = getParameterByName('lang', track.baseUrl);
 
   if (selectedLanguageCode && urlLanguageCode === selectedLanguageCode) {
-    url = track.baseUrl;
+    return track.baseUrl;
   }
   // The selectedLanguageCode does not contain the ":" character, which would never be a language code, but an EN or translated version of "Auto translate to:"
   else if (selectedLanguageCode && selectedLanguageCode.indexOf(":") === -1) {
     // Code for handling selected language code
-    url = track.baseUrl + '&tlang=' + selectedLanguageCode;
+    return track.baseUrl + '&tlang=' + selectedLanguageCode;
   } else {
     // Code for handling the default case
-    url = track.baseUrl;
+    return track.baseUrl;
+  }
+}
+
+const findLocalVoice = (langCode) => {
+  //cannot be just === langCode due to some codes being more than 2 chars
+  return voices.find((voice) => extractLanguageCode(voice.lang) === extractLanguageCode(langCode));
+}
+
+const findVoiceByVoiceURI = (voiceURI) => {
+  return voices.find((voice) => voice.voiceURI === voiceURI);
+}
+
+const speakWithGoogleVoice = (langCode, utterance) => {
+  const message = {
+    info: {
+      selectionText: utterance.text,
+      lang: langCode
+    }
+  };
+  chrome.runtime.sendMessage(message);
+  speechSettings.speechVoice = "GoogleTranslate_" + langCode;
+  chrome.storage.local.set({ speechSettings: speechSettings });
+  isSpeechSynthesisInProgress = false;
+}
+
+const updateSettingsAndSpeak = (voice, utterance) => {
+  utterance.voice = voice;
+
+  utterance.rate = speechSettings.speechSpeed;
+  utterance.volume = speechSettings.speechVolume;
+
+  (voice === null) ? speechSettings.speechVoice = voice : speechSettings.speechVoice = voice.voiceURI;
+
+  if ((utterance.voice?.localService === false && !isEdge) || (!utterance.voice && !isEdge)) {
+    // Assuming speechSettings.speechSpeed is within the range of 1.5-3
+    const originalSpeechSpeed = speechSettings.speechSpeed;
+    const minRange1 = 1.5;  // Minimum value of the original range
+    const maxRange1 = 3;    // Maximum value of the original range
+    const minRange2 = 1;  // Minimum value of the target range
+    const maxRange2 = 1.5;  // Maximum value of the target range
+
+    // Scale the value to the target range
+    const scaledSpeechSpeed = ((originalSpeechSpeed - minRange1) / (maxRange1 - minRange1)) * (maxRange2 - minRange2) + minRange2;
+
+    // Round the result to one decimal place
+    const roundedSpeechSpeed = Math.round(scaledSpeechSpeed * 10) / 10;
+
+    // Use the roundedSpeed value
+    utterance.rate = roundedSpeechSpeed
   }
 
+  chrome.storage.local.set({ speechSettings: speechSettings });
+
+  utterance.onend = () => {
+    isSpeechSynthesisInProgress = false;
+  };
+  speechSynthesis.speak(utterance);
+}
+
+const createSpeechUtterance = (matchedText) => {
+  let utterance = new SpeechSynthesisUtterance(unescapeHTML(matchedText.replace(/\n/g, "").replace(/\\"/g, '"').trim().replace(/[,\.]+$/, '').replace(/\r/g, "")));
+
+  const langCode = speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode;
+  const voice = findVoiceByVoiceURI(speechSettings.speechVoice);
+  const localVoice = findLocalVoice(langCode);
+
+  if (langCode !== null) {
+    if (speechSettings?.speechVoice.startsWith("GoogleTranslate_")) {
+      if (speechSettings.speechVoice.replace("GoogleTranslate_", "") === langCode || !localVoice) {
+        speakWithGoogleVoice(langCode, utterance);
+      } else {
+        updateSettingsAndSpeak(localVoice, utterance);
+      }
+    } else if (!speechSettings.speechVoice && localVoice) {
+      updateSettingsAndSpeak(localVoice, utterance);
+    } else if (voice?.lang.startsWith(langCode)) {
+      updateSettingsAndSpeak(voice, utterance);
+    } else if (localVoice) {
+      updateSettingsAndSpeak(localVoice, utterance);
+    } else {
+      speakWithGoogleVoice(langCode, utterance);
+    }
+  } else if (speechSettings.speechVoice !== null && speechSettings.speechVoice.startsWith("GoogleTranslate_")) {
+    speakWithGoogleVoice(speechSettings.speechVoice.replace("GoogleTranslate_", ""), utterance);
+  } else if (voice) {
+    updateSettingsAndSpeak(voice, utterance);
+  } else {
+    updateSettingsAndSpeak(null, utterance);
+  }
+}
+
+let isSpeechSynthesisInProgress = false;
+
+const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
+
+  const url = assignUrl(track, selectedLanguageCode)
   const xml = await fetch(url).then(resp => resp.text());
 
   if (xml) {
     const xmlDoc = new DOMParser().parseFromString(xml, 'text/xml');
     const textElements = xmlDoc.getElementsByTagName('text');
 
-    let isSpeechSynthesisInProgress = false;
+    isSpeechSynthesisInProgress = false;
     let subtitlePart = '';
     let previousTime = NaN;
 
@@ -129,131 +228,15 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
         const matchedText = matchedElement.textContent.trim();
         if (matchedText !== subtitlePart) {
           subtitlePart = matchedText;
-
           isSpeechSynthesisInProgress = true;
-
-          let utterance = new SpeechSynthesisUtterance(unescapeHTML(matchedText.replace(/\n/g, "").replace(/\\"/g, '"').trim().replace(/[,\.]+$/, '').replace(/\r/g, "")));
-
-          if (speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode !== null) {
-            if (speechSettings.speechVoice && speechSettings.speechVoice.startsWith("GoogleTranslate_")) {
-              const langCode = speechSettings.speechVoice.replace("GoogleTranslate_", "");
-              if (langCode === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode) {
-                // Speak with GoogleTranslate_ if language codes match
-                speakWithGoogleVoice(langCode);
-              } else {
-                const localVoice = findLocalVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
-                if (localVoice) {
-                  utterance.voice = localVoice;
-                  updateSettingsAndSpeak(localVoice);
-                } else {
-                  speakWithGoogleVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
-                }
-              }
-            } else if (!speechSettings.speechVoice) {
-              // default state just after installation, and when the user didn't yet select a voice from a dropdown
-              const langCode = speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode;
-
-              const localVoice = findLocalVoice(langCode);
-              if (localVoice) {
-                updateSettingsAndSpeak(localVoice);
-              } else {
-                speakWithGoogleVoice(langCode);
-              }
-            } else {
-              const voice = findVoiceByVoiceURI(speechSettings.speechVoice);
-              if (voice && voice.lang.substring(0, 2) === speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode) {
-                utterance.voice = voice;
-                updateSettingsAndSpeak(voice);
-              } else {
-                const localVoice = findLocalVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
-                if (localVoice) {
-                  utterance.voice = localVoice;
-                  updateSettingsAndSpeak(localVoice);
-                } else {
-                  speakWithGoogleVoice(speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
-                }
-              }
-            }
-          } else {
-            if (speechSettings.speechVoice !== null) {
-              if (speechSettings.speechVoice.startsWith("GoogleTranslate_")) {
-                const langCode = speechSettings.speechVoice.replace("GoogleTranslate_", "");
-                speakWithGoogleVoice(langCode);
-              } else {
-                const voice = findVoiceByVoiceURI(speechSettings.speechVoice);
-                if (voice) {
-                  utterance.voice = voice;
-                  updateSettingsAndSpeak(voice);
-                }
-              }
-            }
-          }
-
-          function speakWithGoogleVoice(langCode) {
-            const message = {
-              info: {
-                selectionText: utterance.text,
-                lang: langCode
-              }
-            };
-            chrome.runtime.sendMessage(message);
-            speechSettings.speechVoice = "GoogleTranslate_" + langCode;
-            chrome.storage.local.set({ speechSettings: speechSettings });
-            isSpeechSynthesisInProgress = false;
-          }
-
-          function findLocalVoice(langCode) {
-            //cannot be just === langCode due to some codes being more than 2 chars
-            return voices.find((voice) => voice.lang.substring(0, 2) === langCode.substring(0, 2));
-          }
-
-          function findVoiceByVoiceURI(voiceURI) {
-            return voices.find((voice) => voice.voiceURI === voiceURI);
-          }
-
-          function updateSettingsAndSpeak(voice) {
-            if (voice) {
-              utterance.voice = voice;
-            }
-
-            utterance.rate = speechSettings.speechSpeed;
-            utterance.volume = speechSettings.speechVolume;
-
-            //non local voices play way, way faster, and their speed needs to be scalled down
-            //second OR makes sure that the default voice on first run, will also be scalled, as in Chrome, that would be null for utterance.voice but at the same time, default one is remote, therefore it needs scalling
-            if ((utterance.voice && utterance.voice.localService === false && !isEdge) || (!utterance.voice && !isEdge)) {
-              // Assuming speechSettings.speechSpeed is within the range of 1.5-3
-              const originalSpeechSpeed = speechSettings.speechSpeed;
-              const minRange1 = 1.5;  // Minimum value of the original range
-              const maxRange1 = 3;    // Maximum value of the original range
-              const minRange2 = 1;  // Minimum value of the target range
-              const maxRange2 = 1.5;  // Maximum value of the target range
-
-              // Scale the value to the target range
-              const scaledSpeechSpeed = ((originalSpeechSpeed - minRange1) / (maxRange1 - minRange1)) * (maxRange2 - minRange2) + minRange2;
-
-              // Round the result to one decimal place
-              const roundedSpeechSpeed = Math.round(scaledSpeechSpeed * 10) / 10;
-
-              // Use the roundedSpeed value
-              utterance.rate = roundedSpeechSpeed
-            }
-
-            speechSettings.speechVoice = voice.voiceURI;
-            chrome.storage.local.set({ speechSettings: speechSettings });
-
-            utterance.onend = () => {
-              isSpeechSynthesisInProgress = false;
-            };
-            speechSynthesis.speak(utterance);
-          }
+          createSpeechUtterance(matchedText);
         }
       }
       previousTime = currentTime;
     }
 
     clearInterval(intervalId); // Clear previous interval if exists. In order to update the interval, you need to clear the previous interval using clearInterval before setting the new interval. Simply overriding the intervalId variable without clearing the previous interval can lead to multiple intervals running simultaneously, which is likely not the desired behavior.
-    intervalId = setInterval(matchXmlTextToCurrentTime, 250); // Set the new interval
+    intervalId = setInterval(matchXmlTextToCurrentTime, 500); // Set the new interval
   }
 };
 
@@ -659,7 +642,6 @@ const createSelectionLink = (track, languageTexts) => {
       selectedLanguageCode = dropdown.value;
     }
     speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = selectedLanguageCode;
-    chrome.storage.local.set({ speechSettings: speechSettings });
 
     checkbox.checked = true;
 
@@ -832,7 +814,7 @@ const convertFromTimedToSrtFormat = xml => {
     // Using text.textContent will automatically replace characters like &quot;,
     // use text.childNodes[0].nodeValue not
     // const orginalText = text.textContent
-    const orginalText = (text.childNodes && text.childNodes.length) ? text.childNodes[0].nodeValue : ''
+    const orginalText = (text.childNodes?.length) ? text.childNodes[0].nodeValue : ''
 
     const endTime = startTime + duration
     const normalizedText = orginalText.replace(/\\n/g, '\n').replace(/\\"/g, '"').trim()
@@ -926,43 +908,80 @@ setInterval(function () {
       }
     }
   }
-}, 500)
+}, 1000)
 
 // Listen for messages from the settings.js file
 chrome.runtime.onMessage.addListener(function (message) {
-  if (message.command === 'updateDropdowns') {
-    clearInterval(intervalId);
+  clearInterval(intervalId);
 
-    const speechVoice = message.voice;
-    const dropdowns = document.querySelectorAll('[id^="dropdown_"]');
+  const speechVoice = message.voice;
 
-    let languageCode = voices.find((voice) => voice.voiceURI === speechVoice);
-    speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = languageCode.lang.substring(0, 2);
+  speechSettings.speechVoice = speechVoice;
+  chrome.storage.local.set({ speechSettings: speechSettings });
 
-    dropdowns.forEach(function (dropdown) {
-      // Find the option with the matching languageCode
-      // option.value has to be .substring(0, 2) due to Chinese code having more chars than that
-      const selectedOption = Array.from(dropdown.options).find(option => option.value.substring(0, 2) === languageCode.lang.substring(0, 2));
+  const dropdowns = document.querySelectorAll('[id^="dropdown_"]');
 
-      // Set the selectedIndex of the dropdown to the index of the selected option
-      if (selectedOption) {
-        dropdown.selectedIndex = selectedOption.index;
-      }
+  const isGoogleTranslate_Voice = speechVoice.startsWith("GoogleTranslate_");
 
-      // Assuming the checkbox was created as a sibling of the dropdown within the same container
-      const container = dropdown.parentNode;
-      const checkbox = container.querySelector('input[type="checkbox"]');
-      if (checkbox) {
-        // Reselect the checkbox if it was previously selected
-        const isChecked = checkbox.checked;
-        checkbox.checked = false; // Uncheck the checkbox first
-        checkbox.checked = isChecked; // Recheck the checkbox to trigger the 'change' event
-        if (isChecked) {
-          // Trigger the 'change' event on the checkbox. I had to do it that way, as checkbox.checked = isChecked wasn't triggering an event
-          const event = new Event('change');
-          checkbox.dispatchEvent(event);
-        }
-      }
-    });
+  let languageCode;
+
+  if (isGoogleTranslate_Voice) {
+    languageCode = speechVoice.replace("GoogleTranslate_", "");
+    speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = languageCode
+  } else {
+    languageCode = voices.find((voice) => voice.voiceURI === speechVoice);
+    speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = extractLanguageCode(languageCode.lang);
   }
+
+  dropdowns.forEach(function (dropdown) {
+    let selectedOption;
+
+    if (isGoogleTranslate_Voice) {
+      selectedOption = Array.from(dropdown.options).find(option => option.value === extractLanguageCode(languageCode));
+    } else {
+      // Find the option with the matching languageCode
+      selectedOption = Array.from(dropdown.options).find(option => option.value === extractLanguageCode(languageCode.lang));
+    }
+
+    // Set the selectedIndex of the dropdown to the index of the selected option
+    if (selectedOption) {
+      dropdown.selectedIndex = selectedOption.index;
+    }
+
+    // Assuming the checkbox was created as a sibling of the dropdown within the same container
+    const container = dropdown.parentNode;
+    const checkbox = container.querySelector('input[type="checkbox"]');
+    if (checkbox?.checked) {
+      //checks if it was checked
+      // Trigger the 'change' event on the checkbox. I had to do it that way, as checkbox.checked = isChecked wasn't triggering an event - checked with the debugger!
+      checkbox.dispatchEvent(new Event('change'));
+    }
+  });
 });
+
+// Use a precompiled regular expression: Since the regular expression is used repeatedly, it can be precompiled outside the function to improve performance. This avoids compiling the regular expression each time the function is called.
+const regex = /^([a-z]{2})(?:-[A-Za-z]{2})?$/;
+const qualifierRegex = /^([a-z]{2})(?:-[A-Za-z]+)/;
+
+function extractLanguageCode(text) {
+  if (text === null) return null;
+
+  const matches = text.match(regex);
+  if (matches) {
+    return matches[1];
+  }
+
+  // Extract language code from text containing qualifiers
+  const qualifierMatches = text.match(qualifierRegex);
+  if (qualifierMatches) {
+    return qualifierMatches[1];
+  }
+
+  // Handle cases where additional qualifiers are present
+  const hyphenIndex = text.indexOf("-");
+  if (hyphenIndex !== -1) {
+    return text.slice(0, hyphenIndex);
+  }
+
+  return text;
+}
