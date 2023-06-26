@@ -105,7 +105,7 @@ const assignUrl = (track, selectedLanguageCode) => {
     // Code for handling selected language code
     return track.baseUrl + '&tlang=' + selectedLanguageCode;
   } else {
-    if (selectedLanguageCode.includes(":")) {
+    if (selectedLanguageCode?.includes(":")) {
       speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = urlLanguageCode;
     }
     // Code for handling the default case
