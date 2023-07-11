@@ -132,7 +132,6 @@ const speakWithGoogleVoice = (langCode, utterance) => {
   chrome.runtime.sendMessage(message);
   speechSettings.speechVoice = "GoogleTranslate_" + langCode;
   chrome.storage.local.set({ speechSettings: speechSettings });
-  isSpeechSynthesisInProgress = false;
 }
 
 const updateSettingsAndSpeak = (voice, utterance) => {
@@ -201,6 +200,20 @@ const createSpeechUtterance = (matchedText) => {
   }
 }
 
+const waitUntilSpeechSynthesisComplete = () => {
+  return new Promise(resolve => {
+    const checkStatus = () => {
+      if (!isSpeechSynthesisInProgress) {
+        resolve();
+      } else {
+        setTimeout(checkStatus, 100); // Check again after 100 milliseconds
+      }
+    };
+
+    checkStatus();
+  });
+}
+
 let isSpeechSynthesisInProgress = false;
 
 const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
@@ -214,23 +227,29 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
 
     isSpeechSynthesisInProgress = false;
     let subtitlePart = '';
-    let previousTime = NaN;
 
-    const matchXmlTextToCurrentTime = () => {
-      // save resources if the previous subtitle is being spoken. Trying to control the flow by clearInterval would not be a good idea, due to other parts of code also setting the interval; for a reason - tested; better to just return;
-      if (isSpeechSynthesisInProgress) return;
+    const matchXmlTextToCurrentTime = async () => {
+      //this will save computing cycles of iterating over an array when a video is on pause
+      if (document.getElementsByClassName('video-stream')[0].paused) return;
 
       const currentTime = document.getElementsByClassName('video-stream')[0].currentTime + 0.25;
-
-      //this will save computing cycles of iterating over an array when a video is on pause
-      if (previousTime === currentTime) return;
-
       const matchedElement = binarySearch(textElements, currentTime);
 
       if (matchedElement) {
         const matchedText = matchedElement.textContent.trim();
         if (matchedText !== subtitlePart) {
           subtitlePart = matchedText;
+          if (isSpeechSynthesisInProgress) {
+            // previous subtitle is still being spoken, yet the time has come to speak the new subtitle. Therfore put the video on pause
+            document.getElementsByClassName('video-stream')[0].pause();
+
+            // Wait until isSpeechSynthesisInProgress becomes false
+            await waitUntilSpeechSynthesisComplete();
+
+            // resume playback of the video
+            document.getElementsByClassName('video-stream')[0].play();
+
+          }
           isSpeechSynthesisInProgress = true;
           createSpeechUtterance(matchedText);
         }
@@ -768,22 +787,28 @@ const unescapeHTML = inputText => {
     /&lt;/g,
     /&gt;/g,
     /&#39;/g
-  ]
+  ];
   const UNESCAPE_SEQ = [
     '&',
     '"',
     '<',
     '>',
     '\''
-  ]
-  for (let i = 0; i < ESCAPE_SEQ.length; i++) {
-    inputText = inputText.replace(ESCAPE_SEQ[i], UNESCAPE_SEQ[i])
-  }
+  ];
+  ESCAPE_SEQ.forEach((escapeSeq, index) => {
+    inputText = inputText.replace(escapeSeq, UNESCAPE_SEQ[index]);
+  });
   return inputText
 }
 
 let currentUrl = ''
 
+/**
+ * @return {String}
+ */
+const extractVideoId = () => {
+  return getParameter('v')
+}
 
 /**
   * This function will be called periodically.
@@ -809,18 +834,7 @@ const checkSubtitle = () => {
   setTimeout(checkSubtitle, 500)
 }
 
-
-const init = () => {
-  setTimeout(checkSubtitle, 0)
-}
-
-
-/**
- * @return {String}
- */
-const extractVideoId = () => {
-  return getParameter('v')
-}
+checkSubtitle()
 
 
 /**
@@ -833,9 +847,6 @@ const getSubtitleList = async videoId => {
   const arr = regex.exec(html)
   arr == null ? notifyNotFound() : buildGui(JSON.parse(arr[1]));
 }
-
-
-init()
 
 /**
  * Convert from YouTube closed caption format to srt format.
@@ -960,58 +971,65 @@ setInterval(function () {
 
 // Listen for messages from the settings.js file
 chrome.runtime.onMessage.addListener(function (message) {
-  clearInterval(intervalId);
+  if (message.sender === 'settings') {
+    clearInterval(intervalId);
 
-  const speechVoice = message.voice;
+    const speechVoice = message.voice;
 
-  speechSettings.speechVoice = speechVoice;
-  chrome.storage.local.set({ speechSettings: speechSettings });
+    speechSettings.speechVoice = speechVoice;
+    chrome.storage.local.set({ speechSettings: speechSettings });
 
-  const dropdowns = document.querySelectorAll('[id^="dropdown_"]');
+    const dropdowns = document.querySelectorAll('[id^="dropdown_"]');
 
-  const isGoogleTranslate_Voice = speechVoice.startsWith("GoogleTranslate_");
+    const isGoogleTranslate_Voice = speechVoice.startsWith("GoogleTranslate_");
 
-  let languageCode;
-
-  if (isGoogleTranslate_Voice) {
-    languageCode = speechVoice.replace("GoogleTranslate_", "");
-    speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = languageCode
-  } else {
-    languageCode = voices.find((voice) => voice.voiceURI === speechVoice);
-    speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = extractLanguageCode(languageCode.lang);
-  }
-
-  dropdowns.forEach(function (dropdown) {
-    let selectedOption;
+    let languageCode;
 
     if (isGoogleTranslate_Voice) {
-      selectedOption = Array.from(dropdown.options).find(option => option.value === extractLanguageCode(languageCode));
+      languageCode = speechVoice.replace("GoogleTranslate_", "");
+      speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = languageCode
     } else {
-      // Find the option with the matching languageCode
-      selectedOption = Array.from(dropdown.options).find(option => option.value === extractLanguageCode(languageCode.lang));
+      languageCode = voices.find((voice) => voice.voiceURI === speechVoice);
+      speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = extractLanguageCode(languageCode.lang);
     }
 
-    // Set the selectedIndex of the dropdown to the index of the selected option
-    if (selectedOption) {
-      dropdown.selectedIndex = selectedOption.index;
-    }
+    dropdowns.forEach(function (dropdown) {
+      let selectedOption;
 
-    // Assuming the checkbox was created as a sibling of the dropdown within the same container
-    const container = dropdown.parentNode;
-    const checkbox = container.querySelector('input[type="checkbox"]');
-    if (checkbox?.checked) {
-      //checks if it was checked
-      // Trigger the 'change' event on the checkbox. I had to do it that way, as checkbox.checked = isChecked wasn't triggering an event - checked with the debugger!
-      checkbox.dispatchEvent(new Event('change'));
-    }
-  });
+      if (isGoogleTranslate_Voice) {
+        selectedOption = Array.from(dropdown.options).find(option => option.value === extractLanguageCode(languageCode));
+      } else {
+        // Find the option with the matching languageCode
+        selectedOption = Array.from(dropdown.options).find(option => option.value === extractLanguageCode(languageCode.lang));
+      }
+
+      // Set the selectedIndex of the dropdown to the index of the selected option
+      if (selectedOption) {
+        dropdown.selectedIndex = selectedOption.index;
+      }
+
+      // Assuming the checkbox was created as a sibling of the dropdown within the same container
+      const container = dropdown.parentNode;
+      const checkbox = container.querySelector('input[type="checkbox"]');
+      if (checkbox?.checked) {
+        //checks if it was checked
+        // Trigger the 'change' event on the checkbox. I had to do it that way, as checkbox.checked = isChecked wasn't triggering an event - checked with the debugger!
+        checkbox.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+  if (message.sender === 'speech') {
+    isSpeechSynthesisInProgress = false;
+  }
+
 });
+
 
 // Use a precompiled regular expression: Since the regular expression is used repeatedly, it can be precompiled outside the function to improve performance. This avoids compiling the regular expression each time the function is called.
 const regex = /^([a-z]{2})(?:-[A-Za-z]{2})?$/;
 const qualifierRegex = /^([a-z]{2})(?:-[A-Za-z]+)/;
 
-function extractLanguageCode(text) {
+const extractLanguageCode = (text) => {
   if (text === null) return null;
 
   const matches = text.match(regex);
