@@ -29,7 +29,7 @@ chrome.storage.local.get('speechSettings', result => {
     speechSettings = result.speechSettings;
   } else {
     speechSettings = {
-      speechSpeed: 1.6,
+      speechSpeed: 2.3,
       speechVolume: 1,
       speechVoice: null,
       rememberUserLastSelectedAutoTranslateToLanguageCode: null
@@ -143,12 +143,12 @@ const updateSettingsAndSpeak = (voice, utterance) => {
   (voice === null) ? speechSettings.speechVoice = voice : speechSettings.speechVoice = voice.voiceURI;
 
   if ((utterance.voice?.localService === false && !isEdge) || (!utterance.voice && !isEdge)) {
-    // Assuming speechSettings.speechSpeed is within the range of 1.5-3
+    // Assuming speechSettings.speechSpeed is within the range of 1.7-3
     const originalSpeechSpeed = speechSettings.speechSpeed;
-    const minRange1 = 1.5;  // Minimum value of the original range
+    const minRange1 = 1.7;  // Minimum value of the original range
     const maxRange1 = 3;    // Maximum value of the original range
     const minRange2 = 1;  // Minimum value of the target range
-    const maxRange2 = 1.5;  // Maximum value of the target range
+    const maxRange2 = 1.4;  // Maximum value of the target range. 1.5 for example is totaly uniteligible in case of google voices EN/PL I understand, and I'm used to to watching stuff at x2 speeds, so that x1.5 must be equivalent of a x3.5 if not more
 
     // Scale the value to the target range
     const scaledSpeechSpeed = ((originalSpeechSpeed - minRange1) / (maxRange1 - minRange1)) * (maxRange2 - minRange2) + minRange2;
