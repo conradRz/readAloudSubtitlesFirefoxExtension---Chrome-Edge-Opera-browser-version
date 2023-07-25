@@ -218,7 +218,7 @@ let isSpeechSynthesisInProgress = false;
 
 const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
 
-  const url = assignUrl(track, selectedLanguageCode)
+  const url = assignUrl(track, selectedLanguageCode).replace('&kind=asr', '');
   const xml = await fetch(url).then(resp => resp.text());
 
   if (xml) {
@@ -230,7 +230,8 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
 
     const matchXmlTextToCurrentTime = async () => {
       //this will save computing cycles of iterating over an array when a video is on pause
-      if (document.getElementsByClassName('video-stream')[0].paused) return;
+      //commented out, as it was causing a bug
+      //if (document.getElementsByClassName('video-stream')[0].paused) return;
 
       const currentTime = document.getElementsByClassName('video-stream')[0].currentTime + 0.25;
       const matchedElement = binarySearch(textElements, currentTime);
@@ -254,7 +255,6 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
           createSpeechUtterance(matchedText);
         }
       }
-      previousTime = currentTime;
     }
 
     clearInterval(intervalId); // Clear previous interval if exists. In order to update the interval, you need to clear the previous interval using clearInterval before setting the new interval. Simply overriding the intervalId variable without clearing the previous interval can lead to multiple intervals running simultaneously, which is likely not the desired behavior.
@@ -662,6 +662,17 @@ const createSelectionLink = (track, languageTexts) => {
       selectedLanguageCode = null;
     } else {
       selectedLanguageCode = dropdown.value;
+
+      const dropdowns = document.querySelectorAll('[id^="dropdown_"]');
+
+      // Get the value of the dropdown this was called from
+      const value = dropdown.value;
+
+      // Loop through the other dropdowns using forEach
+      dropdowns.forEach((dropdown) => {
+        // Set the value of the other dropdowns to the value of the first dropdown
+        dropdown.value = value;
+      });
     }
     speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = selectedLanguageCode;
 
