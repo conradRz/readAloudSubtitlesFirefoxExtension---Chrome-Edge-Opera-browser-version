@@ -230,6 +230,15 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
     const xmlDoc = new DOMParser().parseFromString(xml, 'text/xml');
     const textElements = xmlDoc.getElementsByTagName('text');
 
+    //Youtube sometimes has those empty UML tags. Example below:
+    //<text start="41.7" dur="5.46"/>
+    //compute now -> save computation later (trying to check for empty strings before passing it forward before each utterance would be "wasteful")
+    Array.from(textElements).forEach(textElement => {
+      if (!textElement.textContent.trim()) {
+        textElement.remove();
+      }
+    });
+
     isSpeechSynthesisInProgress = false;
     let subtitlePart = '';
 
