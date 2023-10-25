@@ -247,7 +247,7 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
       //commented out, as it was causing a bug
       //if (document.getElementsByClassName('video-stream')[0].paused) return;
 
-      const currentTime = document.getElementsByClassName('video-stream')[0].currentTime + 0.25;
+      const currentTime = document.getElementsByClassName('video-stream')[0].currentTime;
       const matchedElement = binarySearch(textElements, currentTime);
 
       if (matchedElement) {
