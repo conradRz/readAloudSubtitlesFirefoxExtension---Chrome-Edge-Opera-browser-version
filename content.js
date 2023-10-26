@@ -700,7 +700,7 @@ const createSelectionLink = (track, languageTexts) => {
 
     checkbox.checked = true;
 
-    //below is important, as `checkbox.checked = true` doesn't trigger even listener for some reason
+    //below is important, as `checkbox.checked = true` doesn't trigger event listener for some reason
     selectCaptionFileForTTS(track, selectedLanguageCode);
 
   });
