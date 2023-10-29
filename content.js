@@ -170,6 +170,11 @@ const updateSettingsAndSpeak = (voice, utterance) => {
     }
   };
 
+  //it seem that remote google voices don't work with utterance.onboundary at all, yet they do work with utterance.onend
+  utterance.onend = () => {
+    isSpeechSynthesisInProgress = false;
+  }
+
   speechSynthesis.speak(utterance);
 }
 
