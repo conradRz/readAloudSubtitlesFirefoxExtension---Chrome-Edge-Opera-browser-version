@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const speedSlider = document.getElementById('speedSlider');
-    const volumeSlider = document.getElementById('volumeSlider');
-    const selectTTS = document.getElementById('engineSelect');
+    let speedSlider = document.getElementById('speedSlider');
+    let volumeSlider = document.getElementById('volumeSlider');
+    let selectTTS = document.getElementById('engineSelect');
 
     // Add event listeners to the sliders
     speedSlider.addEventListener('input', handleSpeedChange);

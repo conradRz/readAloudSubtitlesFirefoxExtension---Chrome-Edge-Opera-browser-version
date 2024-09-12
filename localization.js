@@ -130,9 +130,9 @@ const translations = {
 };
 
 function applyTranslations() {
-    const translation = translations[
-        navigator.language.substring(0, 2) // Get the user's language preference
-    ] || translations.fallback; // Fallback to English if translation not available for user's language
+    const userLanguage = navigator.language.substring(0, 2); // Get the user's language preference
+
+    const translation = translations[userLanguage] || translations.fallback; // Fallback to English if translation not available for user's language
 
     for (const key in translation) {
         if (translation.hasOwnProperty(key)) {

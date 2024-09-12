@@ -10,23 +10,18 @@ let insertPosition
  * @param {Object} track subtitle object
  */
 const downloadCaptionFile = async track => {
-  saveTextAsFile(
-    convertFromTimedToSrtFormat(
-      await fetch(track.baseUrl).
-        then(resp => resp.text()) //what to save
-    ),
-    document.title.replace(/ - YouTube/gi, '') + '.' + track.languageCode + '.srt' //filename
-  )
+  const url = track.baseUrl
+  const xml = await fetch(url).then(resp => resp.text())
+  const content = convertFromTimedToSrtFormat(xml)
+  const fileName = document.title.replace(/ - YouTube/gi, '') + '.' + track.languageCode + '.srt'
+  saveTextAsFile(content, fileName)
 }
 
 let intervalId; // Variable to store the interval ID
 let speechSettings;
 
-const userLanguage = navigator.language.substring(0, 2);
-
 // important as Microsoft voices and Chrome Google voices speeds are different, yet both have a parameter of 
 // utterance.voice.localService === false
-// TODO: that could be done somewhere else, and once, as opposed to here - on every load of a youtube page
 const isEdge = navigator.userAgent.includes("Edg");
 
 chrome.storage.local.get('speechSettings', result => {
@@ -184,7 +179,7 @@ const updateSettingsAndSpeak = (voice, utterance) => {
 }
 
 const createSpeechUtterance = (matchedText) => {
-  const utterance = new SpeechSynthesisUtterance(unescapeHTML(matchedText.replace(/\n/g, "").replace(/\\"/g, '"').trim().replace(/[,\.]+$/, '').replace(/\r/g, "")));
+  let utterance = new SpeechSynthesisUtterance(unescapeHTML(matchedText.replace(/\n/g, "").replace(/\\"/g, '"').trim().replace(/[,\.]+$/, '').replace(/\r/g, "")));
 
   const langCode = speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode;
   const voice = findVoiceByVoiceURI(speechSettings.speechVoice);
@@ -221,7 +216,7 @@ const waitUntilSpeechSynthesisComplete = () => {
       if (!isSpeechSynthesisInProgress) {
         resolve();
       } else {
-        setTimeout(checkStatus, 50); // Check again after 50 milliseconds
+        setTimeout(checkStatus, 100); // Check again after 100 milliseconds
       }
     };
 
@@ -242,7 +237,8 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
   };
 
   if (xml) {
-    const textElements = new DOMParser().parseFromString(xml, 'text/xml').xmlDoc.getElementsByTagName('text');
+    const xmlDoc = new DOMParser().parseFromString(xml, 'text/xml');
+    const textElements = xmlDoc.getElementsByTagName('text');
 
     //Youtube sometimes has those empty UML tags. Example below:
     //<text start="41.7" dur="5.46"/>
@@ -261,10 +257,8 @@ const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
       //commented out, as it was causing a bug
       //if (document.getElementsByClassName('video-stream')[0].paused) return;
 
-      const matchedElement = binarySearch(
-        textElements,
-        document.getElementsByClassName('video-stream')[0].currentTime //current time
-      );
+      const currentTime = document.getElementsByClassName('video-stream')[0].currentTime;
+      const matchedElement = binarySearch(textElements, currentTime);
 
       if (matchedElement) {
         const matchedText = matchedElement.textContent.trim();
@@ -368,6 +362,7 @@ const buildGui = captionTracks => {
 
   removeIfAlreadyExists()
 
+  const userLanguage = navigator.language.substring(0, 2);
   const texts = languageTexts[userLanguage] || languageTexts['en']; // Fallback to English if user language is not defined
 
   const container = createOutterContainer(texts.subtitleFileDownload, CONTAINER_ID);
@@ -413,7 +408,9 @@ const canInsert = () => {
 
   // find the position above the name of the Channel
   for (const selector of selectorList) {
-    if (document.querySelector(selector)) {
+    insertPosition = document.querySelector(selector)
+    if (insertPosition) {
+      // insertPosition.style.border = '1rem solid #000'
       return true
     }
   }
@@ -618,6 +615,7 @@ const createSelectionLink = (track, languageTexts) => {
 
   const defaultOption = document.createElement('option');
 
+  const userLanguage = navigator.language.substring(0, 2);
   const texts = languageTexts[userLanguage] || languageTexts['en']; // Fallback to English if user language is not define
 
   if (speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode !== null) {
@@ -655,8 +653,11 @@ const createSelectionLink = (track, languageTexts) => {
 
     if (checkbox.checked) {
 
-      if (dropdown.value) {
-        selectCaptionFileForTTS(track, dropdown.value);
+      // Retrieve the selected language code from the dropdown
+      const selectedLanguageCode = dropdown.value;
+
+      if (selectedLanguageCode) {
+        selectCaptionFileForTTS(track, selectedLanguageCode);
       } else if (speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode !== null) {
         selectCaptionFileForTTS(track, speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode);
       }
@@ -680,6 +681,7 @@ const createSelectionLink = (track, languageTexts) => {
     window.speechSynthesis.cancel();
 
     if (dropdown.value === '') {
+      selectedLanguageCode = null;
     } else {
       selectedLanguageCode = dropdown.value;
 
@@ -710,6 +712,7 @@ const createSelectionLink = (track, languageTexts) => {
  * Check if the container already exists (so we don't have to process again).
  */
 const removeIfAlreadyExists = () => {
+
   const container = document.getElementById(CONTAINER_ID)
   if (container != null) container.parentNode.removeChild(container);
 
@@ -764,6 +767,7 @@ const notifyNotFound = () => {
     },
   };
 
+  const userLanguage = navigator.language.substring(0, 2);
   const text = languageTexts[userLanguage] || languageTexts['en']; // Fallback to English if user language is not defined
 
   removeIfAlreadyExists()
@@ -772,20 +776,28 @@ const notifyNotFound = () => {
 }
 
 /**
+* Get parameter value from URL.
+* @param {String} param Parameter name
+* @return {String} Parameter value
+*/
+const getParameter = param => {
+  const urlParams = new URLSearchParams(window.location.search)
+  return urlParams.get(param)
+}
+
+/**
  * Save text file (by JS).
  * @param {String} text The content of the text to be saved
  * @param {String} fileName Filename
  */
 const saveTextAsFile = (text, fileName) => {
+  const textFileAsBlob = new Blob([text], { type: 'text/plain' })
+  const hrefLink = window.URL.createObjectURL(textFileAsBlob)
+
   const downloadLink = document.createElement('a')
   downloadLink.download = fileName
   downloadLink.textContent = 'Download file'
-  downloadLink.href = window.URL.createObjectURL(
-    new Blob(
-      [text],
-      { type: 'text/plain' }
-    )
-  )
+  downloadLink.href = hrefLink
   downloadLink.style.display = 'none'
   downloadLink.addEventListener('click', evt => {
     document.body.removeChild(evt.target)
@@ -828,7 +840,7 @@ let currentUrl = ''
  * @return {String}
  */
 const extractVideoId = () => {
-  return new URLSearchParams(window.location.search).get('v')
+  return getParameter('v')
 }
 
 /**
@@ -862,12 +874,10 @@ checkSubtitle()
  * @param {String} videoId Video ID
  */
 const getSubtitleList = async videoId => {
+  const url = 'https://www.youtube.com/watch?v=' + videoId
+  const html = await fetch(url).then(resp => resp.text())
   const regex = /\{"captionTracks":(\[.*?\]),/g
-  const arr = regex.exec(
-    await fetch(
-      'https://www.youtube.com/watch?v=' + videoId
-    ).then(resp => resp.text())
-  )
+  const arr = regex.exec(html)
   arr == null ? notifyNotFound() : buildGui(JSON.parse(arr[1]));
 }
 
@@ -885,12 +895,12 @@ const convertFromTimedToSrtFormat = xml => {
   let content = ''
   let count = 1
 
-  const arr = [...new DOMParser().
-    parseFromString(xml, 'text/xml').
-    getElementsByTagName('text')]
-
+  const parser = new DOMParser()
+  const xmlDoc = parser.parseFromString(xml, 'text/xml')
+  const arr = [...xmlDoc.getElementsByTagName('text')]
   arr.forEach(text => {
     const startTime = parseFloat(text.getAttribute('start'))
+    const duration = parseFloat(text.getAttribute('dur'))
     // Using text.nodeValue will output null
     // Must use text.textContent or text.childNodes[0].nodeValue
     // Using text.textContent will automatically replace characters like &quot;,
@@ -898,10 +908,7 @@ const convertFromTimedToSrtFormat = xml => {
     // const orginalText = text.textContent
     const orginalText = (text.childNodes?.length) ? text.childNodes[0].nodeValue : ''
 
-    const endTime =
-      startTime +
-      parseFloat(text.getAttribute('dur')) //duration
-
+    const endTime = startTime + duration
     const normalizedText = orginalText.replace(/\\n/g, '\n').replace(/\\"/g, '"').trim()
 
     if (normalizedText) {
@@ -940,12 +947,11 @@ const formatTime = timeInSec => {
  * @return {String}
  */
 const fillZero = (num, len) => {
-  // let result = '' + num
-  // for (let i = result.length; i < len; i++) {
-  //   result = '0' + result
-  // }
-  // return result
-  return String(num).padStart(len, '0');;
+  let result = '' + num
+  for (let i = result.length; i < len; i++) {
+    result = '0' + result
+  }
+  return result
 }
 
 /**
@@ -953,29 +959,31 @@ const fillZero = (num, len) => {
  */
 setInterval(function () {
   if (document.getElementsByClassName("video-stream html5-main-video")[0] !== undefined) {
-    const ad = document.getElementsByClassName("video-ads ytp-ad-module")[0];
-    const vid = document.getElementsByClassName("video-stream html5-main-video")[0];
+    let ad = document.getElementsByClassName("video-ads ytp-ad-module")[0];
+    let vid = document.getElementsByClassName("video-stream html5-main-video")[0];
 
-    document.getElementsByClassName("ytp-ad-overlay-close-button").forEach(button => button.click());
-    //console.log("ad banner closed!")
-
+    let closeAble = document.getElementsByClassName("ytp-ad-overlay-close-button");
+    for (let i = 0; i < closeAble.length; i++) {
+      closeAble[i].click();
+      //console.log("ad banner closed!")
+    }
     if (document.getElementsByClassName("style-scope ytd-watch-next-secondary-results-renderer sparkles-light-cta GoogleActiveViewElement")[0] !== undefined) {
-      const sideAd = document.getElementsByClassName("style-scope ytd-watch-next-secondary-results-renderer sparkles-light-cta GoogleActiveViewElement")[0];
+      let sideAd = document.getElementsByClassName("style-scope ytd-watch-next-secondary-results-renderer sparkles-light-cta GoogleActiveViewElement")[0];
       sideAd.style.display = "none";
       //console.log("side ad removed!")
     }
     if (document.getElementsByClassName("style-scope ytd-item-section-renderer sparkles-light-cta")[0] !== undefined) {
-      const sideAd_ = document.getElementsByClassName("style-scope ytd-item-section-renderer sparkles-light-cta")[0];
+      let sideAd_ = document.getElementsByClassName("style-scope ytd-item-section-renderer sparkles-light-cta")[0];
       sideAd_.style.display = "none";
       //console.log("side ad removed!")
     }
     if (document.getElementsByClassName("ytp-ad-text ytp-ad-skip-button-text")[0] !== undefined) {
-      const skipBtn = document.getElementsByClassName("ytp-ad-text ytp-ad-skip-button-text")[0];
+      let skipBtn = document.getElementsByClassName("ytp-ad-text ytp-ad-skip-button-text")[0];
       skipBtn.click();
       //console.log("skippable ad skipped!")
     }
     if (document.getElementsByClassName("ytp-ad-message-container")[0] !== undefined) {
-      const incomingAd = document.getElementsByClassName("ytp-ad-message-container")[0];
+      let incomingAd = document.getElementsByClassName("ytp-ad-message-container")[0];
       incomingAd.style.display = "none";
       //console.log("removed incoming ad alert!")
     }
@@ -986,7 +994,7 @@ setInterval(function () {
     if (ad !== undefined) {
       if (ad.children.length > 0) {
         if (document.getElementsByClassName("ytp-ad-text ytp-ad-preview-text")[0] !== undefined) {
-          vid.playbackRate = 16; //16 is the maximum
+          vid.playbackRate = 16;
           //console.log("Incrementally skipped unskippable ad!")
         }
       }
