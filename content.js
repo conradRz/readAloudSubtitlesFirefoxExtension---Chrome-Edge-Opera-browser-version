@@ -115,19 +115,21 @@ const assignUrl = (track, selectedLanguageCode) => {
   // Extract the current language code from the track.baseUrl
   const urlLanguageCode = getParameterByName('lang', track.baseUrl);
 
+  let basedUrl = track.baseUrl + '&pot=' + poToken + '&c=WEB';
+
   if (selectedLanguageCode && urlLanguageCode === selectedLanguageCode) {
-    return track.baseUrl;
+    return basedUrl;
   }
   // The selectedLanguageCode does not contain the ":" character, which would never be a language code, but an EN or translated version of "Auto translate to:"
   else if (!selectedLanguageCode?.includes(":")) {
     // Code for handling selected language code
-    return track.baseUrl + '&tlang=' + selectedLanguageCode;
+    return basedUrl + '&tlang=' + selectedLanguageCode;
   } else {
     if (selectedLanguageCode?.includes(":")) {
       speechSettings.rememberUserLastSelectedAutoTranslateToLanguageCode = urlLanguageCode;
     }
     // Code for handling the default case
-    return track.baseUrl;
+    return basedUrl;
   }
 }
 
