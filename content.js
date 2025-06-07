@@ -5,7 +5,7 @@ const CONTAINER_ID2 = 'captionDownloadContainer2'
 // Location to add your HTML
 let insertPosition
 
-let poToken = ""
+let poToken = null
 
 const script = document.createElement('script');
 script.src = chrome.runtime.getURL('injected.js');
@@ -16,9 +16,8 @@ script.onload = () => {
 (document.head || document.documentElement).appendChild(script);
 
 window.addEventListener('FoundPOT', (event) => {
-  const pot = /** @type {CustomEvent} */(event).detail;
-  console.log('[Content Script] POT value:', pot);
-  poToken = pot
+  poToken = /** @type {CustomEvent} */(event).detail;
+  console.log('[Content Script] POT value:', poToken);
 });
 
 
@@ -111,9 +110,31 @@ const getParameterByName = (name, url) => {
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
 
-const assignUrl = (track, selectedLanguageCode) => {
+async function toggleUntilPoTokenSet() {
+  const captionsButton = document.querySelector('.ytp-subtitles-button');
+  if (!captionsButton) return;
+
+  while (poToken === null) {
+    captionsButton.click();
+    captionsButton.click(); // Toggle captions back to avoid annoying the user
+
+    const startTime = Date.now();
+    // Wait up to 2 seconds, checking every 100 ms if poToken is set
+    while (poToken === null && Date.now() - startTime < 2000) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+}
+
+
+const assignUrl = async (track, selectedLanguageCode) => {
   // Extract the current language code from the track.baseUrl
   const urlLanguageCode = getParameterByName('lang', track.baseUrl);
+
+  if (!poToken) {
+    // If poToken is not set for this insertion of content script, wait until it is set
+    await toggleUntilPoTokenSet();
+  }
 
   let basedUrl = track.baseUrl + '&pot=' + poToken + '&c=WEB';
 
@@ -249,11 +270,12 @@ let isSpeechSynthesisInProgress = false;
 
 const selectCaptionFileForTTS = async (track, selectedLanguageCode = null) => {
 
-  let url = assignUrl(track, selectedLanguageCode).replace('&kind=asr', '');
+  // this has to be inside () as it returns a promise first not a string
+  let url = (await assignUrl(track, selectedLanguageCode)).replace('&kind=asr', '');
   let xml = await fetch(url).then(resp => resp.text());
 
   if (!xml) {
-    url = assignUrl(track, selectedLanguageCode);
+    url = await assignUrl(track, selectedLanguageCode);
     xml = await fetch(url).then(resp => resp.text());
   };
 
