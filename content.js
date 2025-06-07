@@ -5,6 +5,24 @@ const CONTAINER_ID2 = 'captionDownloadContainer2'
 // Location to add your HTML
 let insertPosition
 
+let poToken = ""
+
+const script = document.createElement('script');
+script.src = chrome.runtime.getURL('injected.js');
+script.onload = () => {
+  console.log('[Content Script] inject.js loaded into page');
+  script.remove();
+};
+(document.head || document.documentElement).appendChild(script);
+
+window.addEventListener('FoundPOT', (event) => {
+  const pot = /** @type {CustomEvent} */(event).detail;
+  console.log('[Content Script] POT value:', pot);
+  poToken = pot
+});
+
+
+
 /**
  * Download subtitle files.
  * @param {Object} track subtitle object
